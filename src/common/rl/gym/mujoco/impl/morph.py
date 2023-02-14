@@ -1,0 +1,3 @@
+
+
+MORPHOLOGIES = ['ant', 'cheetah']

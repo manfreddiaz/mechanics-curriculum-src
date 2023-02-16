@@ -4,8 +4,7 @@
 #SBATCH --cpus-per-task=32                                # Ask for 2 CPUs
 #SBATCH --gres=gpu:0                                     # Ask for 1 GPU
 #SBATCH --mem=64G                                        # Ask for 10 GB of RAM
-#SBATCH --time=24:00:00                                   # The job will run for 3 hours
-#SBATCH -o /network/scratch/<u>/<username>/slurm-%j.out  # Write the log on scratch
+#SBATCH -o /network/scratch/d/diazcabm/slurm-%j.out  # Write the log on scratch
 
 # 1. Load the required modules
 module load anaconda/3

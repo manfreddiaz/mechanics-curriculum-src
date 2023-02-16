@@ -26,8 +26,10 @@ class CooperativeMetaGame(gym.Wrapper):
     def step(self, action):
         next_state, reward, done, info =  super().step(action)
 
+        info['meta-strategy'] = self.env.spec.id
         if done:
             self.env = self._meta_strategy()
+
         
         return next_state, reward, done, info
         

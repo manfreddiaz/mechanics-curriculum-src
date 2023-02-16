@@ -1,3 +1,4 @@
+import functools
 from typing import Callable, List, Union
 import numpy as np
 import gym
@@ -184,25 +185,26 @@ def make_ppo(env, seed, args) -> 'PPO':
 
 
 def make_task(args):
-    specs = {
+    game_spec = {
         'players': SPID_STRATEGIES
     }
 
     def make_game(team, seed, args, probs=None):
-        env = make_cooperative_env(
+        make_env = functools.partial( 
+            make_cooperative_env,
             team=team,
             ordered=args.ordered,
             probs=probs,
             episode_time_limit=args.episode_limit,
             num_episodes=args.num_episodes
         )
-        algorithm = make_ppo(
-            env=env,
+        make_alg = functools.partial(
+            make_ppo,
             seed=seed,
             args=args
         )
 
-        return env, algorithm
+        return make_env, make_alg
 
-    return specs, make_game
+    return game_spec, make_game
 

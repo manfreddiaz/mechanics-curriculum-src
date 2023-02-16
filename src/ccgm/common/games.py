@@ -5,10 +5,10 @@ from gymnasium import spaces
 import numpy as np
 
 from stable_baselines3.common.evaluation import evaluate_policy
-from stable_baselines3 import PPO  # , DQN, A2C
+from stable_baselines3 import PPO
 
-from m3g.examples.games.env import SequentialMatrixGameEnvironment
-
+from .coalitions import Coalition  # , DQN, A2C
+# from .envs.sgt.env import SequentialMatrixGameEnvironment
 from .strategies import MetaStrategy
 
 
@@ -16,19 +16,21 @@ class CooperativeMetaGame(gym.Wrapper):
 
     def __init__(
         self,
-        env: SequentialMatrixGameEnvironment,
-        nature_strategy: MetaStrategy,
-        principal_strategy: MetaStrategy
+        meta_strategy: Coalition,
     ) -> None:
-        super().__init__(env)
-        self.nature_meta_strategy = nature_strategy
-        self.principal_meta_strategy = principal_strategy
+        super().__init__(
+            env=meta_strategy._strategy_space[0]
+        )
+        self._meta_strategy = meta_strategy
 
-    def reset(self):
-        self.env.nature_strategy = self.nature_meta_strategy()
-        self.env.principal_strategy = self.principal_meta_strategy()
-        return super().reset()
+    def step(self, action):
+        next_state, reward, done, info =  super().step(action)
 
+        if done:
+            self.env = self._meta_strategy()
+        
+        return next_state, reward, done, info
+        
 
 class CooperativeMetaGameEnvironment(gym.Env):
 
@@ -146,10 +148,6 @@ class MetaGameBanditEnvironment(gym.Env):
 
 
 if __name__ == '__main__':
-    from src.common.sgt import (
-        prisioner_dilemma
-    )
-
     env = SequentialMatrixGameEnvironment(
         nature_strategy='always_cooperate',
         principal_strategy='default',
@@ -158,11 +156,11 @@ if __name__ == '__main__':
     )
     env = CooperativeMetaGame(
         env=env,
-        nature_strategy=ProbabilisticMetaStrategy(
+        nature_strategy=Coalition(
             strategies=['always_defect', 'tit_for_tat'],
             strategy_factory=prisioner_dilemma.pd_nature_strategy_factory
         ),
-        principal_strategy=ProbabilisticMetaStrategy(
+        principal_strategy=Coalition(
             strategies=['default'],
             strategy_factory=prisioner_dilemma.pd_principal_strategy_factory
         )

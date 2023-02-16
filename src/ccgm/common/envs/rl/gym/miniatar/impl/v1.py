@@ -1,7 +1,7 @@
 from gym import envs
 
 
-STRATEGIES = {
+MINATAR_STRATEGIES_v1 = {
     id: env_spec 
         for id, env_spec in envs.registry.items() if "MinAtar" in id and "v1" in id
 }
@@ -16,4 +16,4 @@ def principal_strategy_factory(strategy_name: str):
 
 
 if __name__ == '__main__':
-    print(f"available strategies: {', '.join(STRATEGIES.keys())}")
+    print(f"available strategies: {', '.join(MINATAR_STRATEGIES_v1.keys())}")

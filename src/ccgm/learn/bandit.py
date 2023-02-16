@@ -18,7 +18,7 @@ from m3g.examples.games.wrappers import (
     OneHotObservationWrapper, SparseRewardWrapper
 )
 
-from utils import make_cooperative_env
+from ccgm.utils import make_cooperative_env
 from common.games import MetaGameSyncWrapper, MetaGameBanditEnvironment
 
 

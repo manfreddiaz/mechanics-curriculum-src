@@ -2,7 +2,7 @@ import minatar  # noqa
 from gymnasium import envs
 
 
-STRATEGIES = {
+MINATAR_STRATEGIES_ALL = {
     id: env_spec 
         for id, env_spec in envs.registry.items() if "MinAtar" in id
 }
@@ -18,4 +18,4 @@ def principal_strategy_factory(strategy_name: str):
 
 
 if __name__ == '__main__':
-    print(f"available strategies: {', '.join(STRATEGIES.keys())}")
+    print(f"available strategies: {', '.join(MINATAR_STRATEGIES_ALL.keys())}")

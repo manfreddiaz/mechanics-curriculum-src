@@ -20,7 +20,7 @@ from m3g.examples.games.wrappers import (
     OneHotObservationWrapper, SparseRewardWrapper
 )
 
-from utils import make_cooperative_env
+from ccgm.utils import make_cooperative_env
 
 
 class MetaGameInPlaceRouterEnvironment(gym.Env):

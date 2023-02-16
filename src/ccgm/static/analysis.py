@@ -14,7 +14,7 @@ from stable_baselines3.common.evaluation import evaluate_policy
 from m3g.examples.games.impl.prisioner_dilemma import (
     PD_NATURE_AVAILABLE_STRATEGIES
 )
-from utils import form_teams, make_cooperative_env, team_to_id  # , DQN, A2C
+from ccgm.utils import form_teams, make_cooperative_env, team_to_id  # , DQN, A2C
 
 
 def get_seed(checkpint_name):

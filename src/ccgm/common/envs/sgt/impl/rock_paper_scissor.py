@@ -1,7 +1,7 @@
 import numpy as np
 from gym.envs.registration import register
 
-from m3g.examples.games.strategies import (
+from ..strategies import (
     NatureMemoryOneStrategy, PrincipalMarkovStrategy
 )
 

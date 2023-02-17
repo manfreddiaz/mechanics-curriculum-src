@@ -36,7 +36,7 @@ def parse_args():
     parser.add_argument('--thread-pool-size', default=10, type=int)
     parser.add_argument('--sync', default=False, action='store_true')
     parser.add_argument('--ordered', default=False, type=bool)
-    parser.add_argument('--task', default='minatar', choices=[
+    parser.add_argument('--task', default='sipd', choices=[
         'sipd', 
         'srps',
         'minatar'

@@ -26,7 +26,7 @@ class SparseRewardWrapper(gym.Wrapper):
         super().__init__(env)
         self.agent_acc_rwd = 0
 
-    def reset(self, seed, options):
+    def reset(self):
         self.agent_acc_rwd = 0
         return super().reset()
 

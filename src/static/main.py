@@ -14,17 +14,13 @@ from ccgm.utils import team_to_id, form_teams
 from ccgm.common.envs.sgt import (
    make_task as ipd_make_task
 )
-# from ccgm.common.envs.rl.gym.miniatar.impl.v1 import MINATAR_STRATEGIES_v1
-# from ccgm.common.envs.rl.gym.miniatar.task import (
-#     make_tasks as miniatar_make_task
-# )
+from ccgm.common.envs.rl.gym.miniatar import (
+    make_task as miniatar_make_task
+)
 
 TASKS = {
-    'sipd': ipd_make_task
-    # 'minatar': {
-    #     'strat': MINATAR_STRATEGIES_v1,
-    #     'factory': miniatar_make_task
-    # }
+    'sipd': ipd_make_task,
+    'minatar': miniatar_make_task
 }
 
 
@@ -40,7 +36,7 @@ def parse_args():
     parser.add_argument('--thread-pool-size', default=10, type=int)
     parser.add_argument('--sync', default=False, action='store_true')
     parser.add_argument('--ordered', default=False, type=bool)
-    parser.add_argument('--task', default='sipd', choices=[
+    parser.add_argument('--task', default='minatar', choices=[
         'sipd', 
         'srps',
         'minatar'

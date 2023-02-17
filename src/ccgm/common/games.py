@@ -1,7 +1,6 @@
 from multiprocessing import Event
 from typing import Callable, List, Union
-import gymnasium as gym
-from gymnasium import spaces
+import gym
 import numpy as np
 
 from stable_baselines3.common.evaluation import evaluate_policy

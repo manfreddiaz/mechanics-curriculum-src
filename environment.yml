@@ -37,7 +37,6 @@ dependencies:
       - fonttools==4.38.0
       - gym==0.21.0
       - gym-notices==0.0.8
-      - gymnasium==0.27.1
       - gymnasium-notices==0.0.1
       - idna==3.4
       - importlib-metadata==4.13.0
@@ -46,7 +45,7 @@ dependencies:
       - kiwisolver==1.4.4
       - libtorrent==2.0.7
       - matplotlib==3.7.0
-      - minatar==1.0.12
+      - minatar==1.0.11
       - minigrid==2.1.0
       - numpy==1.24.2
       - nvidia-cublas-cu11==11.10.3.66

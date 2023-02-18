@@ -1,8 +1,13 @@
+import functools
 from typing import List
 import gym
-from stable_baselines3 import PPO
+from stable_baselines3 import DQN, PPO
 from ccgm.common.coalitions import Coalition, OrderedCoalition
 from ccgm.common.games import CooperativeMetaGame
+
+from .impl.v1 import MINATAR_STRATEGIES_v1
+from .utils import StableBaselinesCompatWrapper, MinAtarFeatureExtractor
+from stable_baselines3.dqn.policies import CnnPolicy
 
 
 def make_coalition(
@@ -33,6 +38,7 @@ def make_cooperative_env(
     team: List,
     ordered: bool = False,
     probs: List = None,
+    episode_time_limit: int = 200,
     num_episodes: int = 500 
 ) -> 'CooperativeMetaGame':
 
@@ -45,67 +51,49 @@ def make_cooperative_env(
         )
     )
 
+    env = StableBaselinesCompatWrapper(
+        env=env
+    )
+
     return env
 
-def make_policy():
-    return "MlpPolicy"
+def make_policy(env: gym.Env):
+    return functools.partial(
+        CnnPolicy,
+        features_extractor_class=MinAtarFeatureExtractor,
+        net_arch=[]
+    )
 
 
-def make_ppo(env, seed, args) -> 'PPO':
-    return PPO(
-        policy=make_policy(),
+def make_dqn(env, seed, args) -> 'PPO':
+    return DQN(
+        policy=make_policy(env),
         env=env,
-        verbose=0,
+        verbose=1,
         seed=seed,
-        n_steps=min(2048, args.episode_limit * args.num_episodes),
-        device='cpu'
     )
 
 
-def make_task(team, args):
-    env = make_cooperative_env(
-        team,
-        ordered=args.ordered,
-        episode_time_limit=args.episode_limit,
-        num_episodes=args.num_episodes
-    )
+def make_task(args):
+    game_spec = {
+        'players': MINATAR_STRATEGIES_v1
+    }
 
-    algorithm = make_ppo(env, seed, args)
+    def make_game(team, seed, args, probs=None):
+        make_env = functools.partial( 
+            make_cooperative_env,
+            team=team,
+            ordered=args.ordered,
+            probs=probs,
+            episode_time_limit=args.episode_limit,
+            num_episodes=args.num_episodes
+        )
+        make_alg = functools.partial(
+            make_dqn,
+            seed=seed,
+            args=args
+        )
 
-    return env, algorithm   
+        return make_env, make_alg
 
-
-# class QNetwork(nn.Module):
-#     def __init__(self, in_channels, num_actions):
-
-#         super(QNetwork, self).__init__()
-
-#         # One hidden 2D convolution layer:
-#         #   in_channels: variable
-#         #   out_channels: 16
-#         #   kernel_size: 3 of a 3x3 filter matrix
-#         #   stride: 1
-#         self.conv = nn.Conv2d(in_channels, 16, kernel_size=3, stride=1)
-
-#         # Final fully connected hidden layer:
-#         #   the number of linear unit depends on the output of the conv
-#         #   the output consist 128 rectified units
-#         def size_linear_unit(size, kernel_size=3, stride=1):
-#             return (size - (kernel_size - 1) - 1) // stride + 1
-#         num_linear_units = size_linear_unit(10) * size_linear_unit(10) * 16
-#         self.fc_hidden = nn.Linear(in_features=num_linear_units, out_features=128)
-
-#         # Output layer:
-#         self.output = nn.Linear(in_features=128, out_features=num_actions)
-
-#     # As per implementation instructions according to pytorch, the forward function should be overwritten by all
-#     # subclasses
-#     def forward(self, x):
-#         # Rectified output from the first conv layer
-#         x = f.relu(self.conv(x))
-
-#         # Rectified output from the final hidden layer
-#         x = f.relu(self.fc_hidden(x.view(x.size(0), -1)))
-
-#         # Returns the output from the fully-connected linear layer
-#         return self.output(x)
+    return game_spec, make_game

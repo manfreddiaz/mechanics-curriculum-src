@@ -1,10 +1,10 @@
 import minatar  # noqa
-from gymnasium import envs
+from gym import envs
 
 
 MINATAR_STRATEGIES_ALL = {
     id: env_spec 
-        for id, env_spec in envs.registry.items() if "MinAtar" in id
+        for id, env_spec in envs.registry.env_specs.items() if "MinAtar" in id
 }
 
 

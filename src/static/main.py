@@ -5,8 +5,9 @@ import logging
 import os
 import random
 from itertools import product
-# import torch.multiprocessing as tmp
-from concurrent.futures import ThreadPoolExecutor
+import traceback
+import torch.multiprocessing as tmp
+# from concurrent.futures import ThreadPoolExecutor
 from typing import Callable
 import gym
 import numpy as np
@@ -21,16 +22,13 @@ from omegaconf import DictConfig, OmegaConf
 from ccgm.utils import Coalition
 
 
-log = logging.getLogger(__name__)
-
-
 def play(
     coalition: Coalition, 
-    game_factory: Callable[[str], None], 
     seed, 
     outdir, 
     cfg: DictConfig
 ):
+    log = logging.getLogger()
     # loggging and saving config
     team_dir = os.path.join(outdir, f'game-{str(coalition.idx)}')
     os.makedirs(team_dir, exist_ok=True)
@@ -47,6 +45,8 @@ def play(
 
     log.info(f"<playing> game {coalition.idx} with: {coalition.id}, seed: {seed}")
     
+    log.info(f'<build> environment {cfg.task.id} from config.')
+    _, game_factory = hydra.utils.instantiate(cfg.task)
     make_env = game_factory(coalition)
     def monitored():
         return Monitor(
@@ -59,22 +59,26 @@ def play(
     ])
     envs.seed(seed)
 
+    log.info(f'<build> agent {cfg.agent.id} from config.') 
     make_agent = hydra.utils.instantiate(cfg.agent)
     agent = make_agent(envs)
     torch.save(agent, os.path.join(team_dir, f'{seed}i.model.ckpt'))
 
+    log.info(f'<build> algorithm {cfg.alg.id} from config')
     make_alg = hydra.utils.instantiate(cfg.alg)
     algorithm = make_alg(envs=envs)
+    
+    log.info(f'<learn>')
     algorithm.learn(
         agent=agent,
         task=cfg.task,
         logger=SummaryWriter(os.path.join(team_dir, f'tb-{str(seed)}')),
-        device=torch.device(cfg.run.device),
+        device=torch.device(cfg.torch.device),
     )
 
     torch.save(
         agent, 
-        os.path.join(team_dir, f'{seed}.model.ckpt')
+        final_model
     )
 
     game_info_file = os.path.join(team_dir, 'game.info')
@@ -88,41 +92,6 @@ def play(
     log.info(f"<completed> game with: {coalition.id}, seed: {seed}")
     return 0
 
-# def _async(
-#     outdir:str, 
-#     cfg: DictConfig
-# ):
-#     task_factory = TASKS[config.task]
-#     game_spec, _ = task_factory(config)
-
-#     games = {}
-    
-#     players = [player for player in game_spec['players']]
-#     teams = form_coalitions(players=players, ordered=config.ordered)
-#     teams_idx = {
-#         team: idx for idx, team in enumerate(teams)
-#     }
-
-#     # tmp.set_start_method('spawn')
-#     # with tmp.Pool(config.thread_pool_size, maxtasksperchild=4) as ppe:
-#     with ThreadPoolExecutor(2) as ppe:
-#         for seed, team in product(
-#             range(config.seed, config.seed + config.num_seeds), teams):
-#             game_id = f'{coalition_to_id(team)}-{seed}'
-#             print(f"submitting game with id: {game_id}")
-#             games[ppe.submit(play, teams_idx[team], task_factory, team, seed, outdir, config)] = game_id
-
-#         for game in games:
-#             try:
-#                 code = game.result()
-#                 game_id = games[game]
-#                 print(f'game {game_id}: finished with exit code {code}')
-#             except Exception:
-#                 print(
-#                     f'game {game_id}: failed with the following exception: \n',
-#                     traceback.format_exc()
-#                 )
-
 OmegaConf.register_new_resolver(
     "bmult", lambda x, y: x * y
 )
@@ -131,13 +100,18 @@ OmegaConf.register_new_resolver(
     "bdiv", lambda x, y: x // y
 )
 
+
+
 @hydra.main(version_base=None, config_path="conf", config_name="main")
 def main(
     cfg: DictConfig
 ) -> None:
-    torch.backends.cudnn.deterministic = cfg.run.deterministic
     
-    game_spec, game_factory = hydra.utils.instantiate(cfg.task)
+    log = logging.getLogger(__name__)
+    
+    torch.backends.cudnn.deterministic = cfg.torch.deterministic
+    
+    game_spec, _ = hydra.utils.instantiate(cfg.task)
 
     outdir = os.path.join(
         cfg.run.outdir,
@@ -148,9 +122,28 @@ def main(
     os.makedirs(outdir, exist_ok=True)
 
     seeds = range(cfg.run.seed, cfg.run.seed + cfg.run.num_seeds)
-    for seed, coalition in product(seeds, game_spec.coalitions):
-        log.info(f"<submit> game with {coalition.id}, seed: {seed}")
-        play(coalition, game_factory, seed, outdir, cfg)
+    games = {}
+
+    tmp.set_start_method('spawn')
+    with tmp.Pool(
+        processes=cfg.thread_pool.size, 
+        maxtasksperchild=cfg.thread_pool.maxtasks
+    ) as ppe:
+        for seed, coalition in product(seeds, game_spec.coalitions):
+            log.info(f"<submit> game with {coalition.id}, seed: {seed}")
+            games[ppe.apply_async(play, (coalition, seed, outdir, cfg))] = coalition
+
+        for game in games:
+            try:
+                code = game.get()
+                coalition = games[game]
+                log.info(f'<finished> game with {coalition.id}: finished with exit code {code}')
+            except Exception as ex:
+                log.error(
+                    f'<FAIL> game {coalition.id} with the following exception: \n',
+                    traceback.format_exc(),
+                    exc_info=ex
+                )
 
 
 if __name__ == '__main__':

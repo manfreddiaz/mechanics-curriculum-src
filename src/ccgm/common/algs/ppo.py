@@ -91,7 +91,7 @@ class PPO:
 
                 for item in info:
                     if "episode" in item.keys():
-                        print(f"global_step={global_step}, episodic_return={item['episode']['r']}")
+                        # print(f"global_step={global_step}, episodic_return={item['episode']['r']}")
                         logger.add_scalar("charts/episodic_return", item["episode"]["r"], global_step)
                         logger.add_scalar("charts/episodic_length", item["episode"]["l"], global_step)
                         break
@@ -188,7 +188,7 @@ class PPO:
             logger.add_scalar("losses/approx_kl", approx_kl.item(), global_step)
             logger.add_scalar("losses/clipfrac", np.mean(clipfracs), global_step)
             logger.add_scalar("losses/explained_variance", explained_var, global_step)
-            print("SPS:", int(global_step / (time.time() - start_time)))
+            # print("SPS:", int(global_step / (time.time() - start_time)))
             logger.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
 
         return agent

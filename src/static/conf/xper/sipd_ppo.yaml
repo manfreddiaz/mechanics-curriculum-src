@@ -1,0 +1,5 @@
+# @package _global_
+defaults:
+  - override /alg: ppo
+  - override /agent: ac_mlp
+  - override /task: sipd

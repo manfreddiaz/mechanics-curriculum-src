@@ -14,7 +14,7 @@ from stable_baselines3.common.evaluation import evaluate_policy
 from m3g.examples.games.impl.prisioner_dilemma import (
     PD_NATURE_AVAILABLE_STRATEGIES
 )
-from ccgm.utils import form_teams, make_cooperative_env, team_to_id  # , DQN, A2C
+from ccgm.utils import form_coalitions, make_cooperative_env, coalition_to_id  # , DQN, A2C
 
 
 def get_seed(checkpint_name):
@@ -23,7 +23,7 @@ def get_seed(checkpint_name):
 
 def eval(checkpoint: str, train_team: str, eval_team: Tuple):
     run_seed = int(get_seed(checkpoint))
-    eval_team_id = team_to_id(eval_team)
+    eval_team_id = coalition_to_id(eval_team)
     model = PPO.load(
         path=checkpoint,
         device='cpu',
@@ -42,7 +42,7 @@ def eval(checkpoint: str, train_team: str, eval_team: Tuple):
 
     return {
         'train_team': train_team,
-        'eval_team': team_to_id(eval_team),
+        'eval_team': coalition_to_id(eval_team),
         'seed': run_seed,
         'mean': mean,
         'std': std
@@ -54,7 +54,7 @@ def main(
     order: int = 1
 ):
     players = PD_NATURE_AVAILABLE_STRATEGIES.keys()
-    evaluation_teams = form_teams(
+    evaluation_teams = form_coalitions(
         players=players,
         min_order=1,
     )
@@ -69,7 +69,7 @@ def main(
                 for eval_team in evaluation_teams:
                     future = tpe.apply_async(
                         eval, (check_point, odir, eval_team))
-                    results_ft[future] = f'{odir}-{team_to_id(eval_team)}'
+                    results_ft[future] = f'{odir}-{coalition_to_id(eval_team)}'
 
         results = []
         print('reporting results')

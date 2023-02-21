@@ -1,0 +1,5 @@
+# @package _global_
+defaults:
+  - override /alg: dqn
+  - override /agent: q_mlp
+  - override /task: sipd

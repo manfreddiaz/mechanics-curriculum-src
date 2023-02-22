@@ -7,13 +7,5 @@ MINATAR_STRATEGIES_v1 = {
 }
 
 
-def nature_strategy_factory(strategy_name: str):
-    pass
-
-
-def principal_strategy_factory(strategy_name: str):
-    pass
-
-
 if __name__ == '__main__':
     print(f"available strategies: {', '.join(MINATAR_STRATEGIES_v1.keys())}")

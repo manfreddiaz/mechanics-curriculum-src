@@ -20,7 +20,7 @@ class MlpQNetwork(nn.Module):
 
 class MinAtarQNetwork(nn.Module):
     # https://github.com/kenjyoung/MinAtar/blob/master/examples/dqn.py
-    def __init__(self, env):
+    def __init__(self, envs):
 
         super(MinAtarQNetwork, self).__init__()
 
@@ -30,7 +30,7 @@ class MinAtarQNetwork(nn.Module):
         #   kernel_size: 3 of a 3x3 filter matrix
         #   stride: 1
         self.conv = nn.Conv2d(
-            env.single_observation_space.shape[-1], 
+            envs.single_observation_space.shape[0], 
             16, kernel_size=3, 
             stride=1
         )
@@ -44,7 +44,7 @@ class MinAtarQNetwork(nn.Module):
         self.fc_hidden = nn.Linear(in_features=num_linear_units, out_features=128)
 
         # Output layer:
-        self.output = nn.Linear(in_features=128, out_features=env.single_action_space.n)
+        self.output = nn.Linear(in_features=128, out_features=envs.single_action_space.n)
 
     # As per implementation instructions according to pytorch, the forward function should be overwritten by all
     # subclasses

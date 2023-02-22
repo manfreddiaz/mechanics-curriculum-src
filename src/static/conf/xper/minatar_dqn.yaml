@@ -1,5 +1,9 @@
 # @package _global_
 defaults:
   - override /alg: dqn
-  - override /agent: q_cnn
-  - override /task: sipd
+  - override /agent: q_minatar
+  - override /task: minatar
+
+alg:
+  rparams:
+    total_timesteps: 1000000

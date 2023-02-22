@@ -1,0 +1,21 @@
+defaults:
+    - _self_
+    - alg: ppo
+    - agent: ac_mlp
+    - task: sipd
+
+run:
+    seed: 0
+    num_seeds: 5
+    outdir: logs/static/
+    
+thread_pool:
+    size: 4
+    maxtasks: 4
+
+torch:
+    deterministic: false  
+    device: cuda
+
+log:
+    level: 0

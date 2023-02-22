@@ -1,4 +1,3 @@
-from turtle import shape
 import numpy as np
 import gym
 
@@ -26,12 +25,8 @@ class SparseRewardWrapper(gym.Wrapper):
         super().__init__(env)
         self.agent_acc_rwd = 0
 
-    def reset(self):
-        self.agent_acc_rwd = 0
-        return super().reset()
-
     def step(self, action):
-        next_state, reward, done, info = super().step(action)
+        obs, reward, done, info = super().step(action)
         self.agent_acc_rwd += reward
         info['agent_acc_reward'] = self.agent_acc_rwd
         if done:
@@ -42,10 +37,12 @@ class SparseRewardWrapper(gym.Wrapper):
             else:
                 reward = -1.0
             info['opponent'] = self.unwrapped.nature_strategy.name
+            self.agent_acc_rwd = 0.0 # clean interactions
         else:
             reward = 0.0
 
-        return next_state, reward, done, info
+        return obs, reward, done, info
+
 
 
 class PerformanceSparseRewardWrapper(SparseRewardWrapper):

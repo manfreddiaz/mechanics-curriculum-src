@@ -10,7 +10,7 @@ run:
     outdir: logs/static/
     
 thread_pool:
-    size: 4
+    size: 1
     maxtasks: 4
 
 torch:

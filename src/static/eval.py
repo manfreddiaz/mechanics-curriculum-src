@@ -10,7 +10,9 @@ import torch
 from stable_baselines3.common.monitor import Monitor
 
 import hydra
+from hydra.core.global_hydra import GlobalHydra
 from omegaconf import DictConfig, OmegaConf
+
 
 from ccgm.utils import Coalition
 
@@ -59,7 +61,6 @@ def load_coalition_models(
 
     return i_model, f_model
 
-
 def eval(
     training_coalition: Coalition,
     evaluation_coalition: Coalition, 
@@ -67,7 +68,9 @@ def eval(
     eval_seed: int,
     cfg: DictConfig
 ):
- 
+    if GlobalHydra.instance() is not None:
+        hydra.initialize(config_path='conf')
+
     random.seed(eval_seed)
     np.random.seed(eval_seed)
     torch.manual_seed(eval_seed)
@@ -78,7 +81,7 @@ def eval(
         seed=train_seed,
         cfg=cfg
     )
-    
+
     _, game_factory = hydra.utils.instantiate(cfg.eval.task)
     make_env = game_factory(evaluation_coalition)
     
@@ -90,7 +93,7 @@ def eval(
         )
 
     envs = gym.vector.SyncVectorEnv([
-        monitored()
+        monitored
     ])
 
     game_info_file = os.path.join(train_dir, 'eval.info')
@@ -103,6 +106,11 @@ def eval(
     log.info(f"<completed> game with: {training_coalition.id}, seed: {eval_seed}")
     return 0
 
+def hydra_load_node(x: str):
+    cfg = hydra.compose(f"{x}.yaml")
+    cfg = cfg[list(cfg.keys())[0]]
+    return cfg
+
 OmegaConf.register_new_resolver(
     "bmult", lambda x, y: x * y
 )
@@ -110,11 +118,6 @@ OmegaConf.register_new_resolver(
 OmegaConf.register_new_resolver(
     "bdiv", lambda x, y: x // y
 )
-
-def hydra_load_node(x: str):
-    cfg = hydra.compose(f"{x}.yaml")
-    cfg = cfg[list(cfg.keys())[0]]
-    return cfg
 
 OmegaConf.register_new_resolver(
     "load", hydra_load_node

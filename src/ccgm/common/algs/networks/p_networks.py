@@ -24,20 +24,12 @@ class MinAtarPolicy(nn.Module):
 
     def __init__(self, envs) -> None:
         super().__init__()
-        # One hidden 2D convolution layer:
-        #   in_channels: variable
-        #   out_channels: 16
-        #   kernel_size: 3 of a 3x3 filter matrix
-        #   stride: 1
         self.conv = nn.Conv2d(
             envs.single_observation_space.shape[0], 
             16, kernel_size=3, 
             stride=1
         )
 
-        # Final fully connected hidden layer:
-        #   the number of linear unit depends on the output of the conv
-        #   the output consist 128 rectified units
         def size_linear_unit(size, kernel_size=3, stride=1):
             return (size - (kernel_size - 1) - 1) // stride + 1
         num_linear_units = size_linear_unit(10) * size_linear_unit(10) * 16
@@ -54,4 +46,3 @@ class MinAtarPolicy(nn.Module):
         x = F.relu(self.conv(x))
         x = self.fc_hidden(x.view(x.size(0), -1))
         return x
-

@@ -3,3 +3,8 @@ defaults:
   - override /alg: ppo
   - override /agent: ac_mlp
   - override /task: sipd
+
+run:
+    seed: 0
+    num_seeds: 5
+    outdir: logs/static/

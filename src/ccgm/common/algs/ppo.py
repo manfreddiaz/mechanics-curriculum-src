@@ -192,3 +192,12 @@ class PPO:
             logger.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
 
         return agent
+
+
+    def predict(
+        self, 
+        agent: ActorCritic,
+        obs
+    ):
+        action, _, _, _ = agent.get_action_and_value(obs)
+        return action.cpu().numpy()

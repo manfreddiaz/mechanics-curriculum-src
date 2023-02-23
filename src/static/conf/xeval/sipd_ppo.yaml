@@ -1,0 +1,8 @@
+# @package _global_
+defaults:
+  - /xper: sipd_ppo
+
+eval:
+  total_timesteps: 1000 
+  seed: 1234
+  num_seeds: 1

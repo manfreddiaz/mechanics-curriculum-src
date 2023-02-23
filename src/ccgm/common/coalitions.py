@@ -49,8 +49,8 @@ class OrderedCoalition(Coalition):
 
     def __call__(self, **kwargs) -> Callable:
         action = np.searchsorted(self.segments, self.time)
-        action = self._strategy_space[action]
+        action = min(action, len(self._strategy_space) - 1)
         self.time += 1
         # print(self.time, action.nature_strategy.name)
         # print(self.time)
-        return action
+        return self._strategy_space[action]

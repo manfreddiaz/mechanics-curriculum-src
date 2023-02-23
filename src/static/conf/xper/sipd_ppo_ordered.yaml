@@ -1,0 +1,12 @@
+# @package _global_
+defaults:
+  - override /alg: ppo
+  - override /agent: ac_mlp
+  - override /task: sipd
+
+
+task:
+  order: ordered
+
+run:
+  num_seeds: 3

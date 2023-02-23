@@ -57,11 +57,11 @@ def make_coalition(
         return OrderedCoalition(
             strategies=[
                 make_env(
-                    env_id=strategy_id,
+                    env_id=player,
                     episode_time_limit=episode_time_limit,
                     sparse=sparse,
                     one_hot=one_hot
-                ) for strategy_id in team
+                ) for player in team.players
             ],
             probs=probs,
             time_limit=total_time_limit

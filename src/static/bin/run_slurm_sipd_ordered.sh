@@ -14,7 +14,7 @@ conda activate metacurriculum
 
 # 4. Launch your job, tell it to save the model in $SLURM_TMPDIR
 #    and look for the dataset into $SLURM_TMPDIR
-python main.py +xper=sipd_ppo_ordered ++thread_pool.size=16
+python main.py +xper=sipd_ppo_ordered ++thread_pool.size=16 ++run.outdir=$SLURM_TMPDIR/static/
 
 # 5. Copy whatever you want to save on $SCRATCH
 cp -R $SLURM_TMPDIR/static/ /network/scratch/d/diazcabm/

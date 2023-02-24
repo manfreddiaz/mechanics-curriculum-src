@@ -1,3 +1,4 @@
+import csv
 import logging
 import os
 import random
@@ -13,24 +14,25 @@ import hydra
 from hydra.core.global_hydra import GlobalHydra
 from omegaconf import DictConfig, OmegaConf
 
-
 from ccgm.utils import Coalition
 
 log = logging.getLogger(__name__)
 
-
-def make_input_dir(
-    training_coalition: Coalition,
-    cfg: DictConfig
-):
-    indir = os.path.join(
+def make_xpt_dir(cfg):
+    return os.path.join(
         cfg.run.outdir,
         f"{cfg.task.id}", 
         f"{cfg.task.order}",
         f"{cfg.alg.id}"
     )
+
+def make_xpt_coalition_dir(
+    training_coalition: Coalition,
+    cfg: DictConfig
+):
+    
     return os.path.join(
-        indir, 
+        make_xpt_dir(cfg), 
         f'game-{str(training_coalition.idx)}'
     )
 
@@ -40,7 +42,7 @@ def load_coalition_models(
     seed: int,
     cfg: DictConfig
 ):
-    team_dir = make_input_dir(training_coalition, cfg)
+    team_dir = make_xpt_coalition_dir(training_coalition, cfg)
     
     # verify if the initial model was produced
     # fail otherwise
@@ -55,11 +57,34 @@ def load_coalition_models(
     if not os.path.exists(final_model):
         log.error(f"<failed> game {training_coalition.id} may have not completed!")
         raise FileNotFoundError(final_model)
-    
-    i_model = torch.load(initial_model)
-    f_model = torch.load(final_model)
+
+    device = torch.device(cfg.torch.device) 
+    i_model = torch.load(initial_model).to(device)
+    f_model = torch.load(final_model).to(device)
 
     return i_model, f_model
+
+
+def eval_model(
+    model, 
+    env: gym.vector.VectorEnv, 
+    num_steps: int,
+    cfg: DictConfig
+):
+    device = torch.device(cfg.torch.device) 
+    rewards = np.zeros(shape=(env.num_envs, num_steps)) 
+    
+    obs = env.reset()
+    for step in range(num_steps):
+        action = model.predict(torch.tensor(obs, device=device))
+        next_obs, reward, done, info = env.step(action.cpu().numpy())
+        rewards[::, step] = reward
+        if all(done):
+            next_obs = env.reset()
+        obs = next_obs
+    
+    return rewards
+
 
 def eval(
     training_coalition: Coalition,
@@ -69,13 +94,14 @@ def eval(
     cfg: DictConfig
 ):
     if GlobalHydra.instance() is not None:
-        hydra.initialize(config_path='conf')
+        if not GlobalHydra.instance().is_initialized():
+            hydra.initialize(version_base=None, config_path='conf')
 
     random.seed(eval_seed)
     np.random.seed(eval_seed)
     torch.manual_seed(eval_seed)
 
-    train_dir = make_input_dir(training_coalition, cfg)
+    train_dir = make_xpt_coalition_dir(training_coalition, cfg)
     init_agent, final_agent = load_coalition_models(
         training_coalition=training_coalition,
         seed=train_seed,
@@ -86,8 +112,9 @@ def eval(
     make_env = game_factory(evaluation_coalition)
     
     def monitored():
+        env = make_env()
         return Monitor(
-            make_env(),
+            env,
             filename=os.path.join(train_dir, f'{train_seed}.eval'),
             info_keywords=('meta-strategy',)
         )
@@ -95,16 +122,36 @@ def eval(
     envs = gym.vector.SyncVectorEnv([
         monitored
     ])
+    envs.seed(eval_seed)
 
-    game_info_file = os.path.join(train_dir, 'eval.info')
-    # log game info
-    with open(game_info_file, mode='w+') as f:
-        f.write(training_coalition.id)
-        f.write('\r\n')
-        f.write(cfg.alg.id)
+    r_init = eval_model(
+        init_agent, 
+        envs, 
+        num_steps=cfg.eval.total_timesteps, 
+        cfg=cfg
+    )
+    r_final = eval_model(
+        final_agent, 
+        envs, 
+        num_steps=cfg.eval.total_timesteps,
+        cfg=cfg
+    )
 
-    log.info(f"<completed> game with: {training_coalition.id}, seed: {eval_seed}")
-    return 0
+    log.info(f"<evaluation> game with: {training_coalition.id}, seed: {eval_seed}")
+
+    envs.close()
+
+    return {
+        'train_team': training_coalition.id,
+        'train_seed': train_seed,
+        'eval_team': evaluation_coalition.id,
+        'eval_seed': eval_seed,
+        'r_0': np.mean(r_init),
+        'r_0_std': np.std(r_init),
+        'r_1': np.mean(r_final),
+        'r_1_std': np.std(r_final),
+    }
+
 
 def hydra_load_node(x: str):
     cfg = hydra.compose(f"{x}.yaml")
@@ -154,19 +201,38 @@ def main(
             async_result = ppe.apply_async(
                 eval, (training_coalition, evaluation_coalition, train_seed, eval_seed, cfg)
             )
-            games[async_result] = (training_coalition, evaluation_coalition)
+            games[async_result] = (train_seed, eval_seed, training_coalition, evaluation_coalition)
 
-        for game in games:
-            try:
-                code = game.get()
-                training_coalition = games[game]
-                log.info(f'<finished> game with {training_coalition.id}: finished with exit code {code}')
-            except Exception as ex:
-                log.error(
-                    f'<FAIL> game {training_coalition.id} with the following exception: \n',
-                    traceback.format_exc(),
-                    exc_info=ex
-                )
+        fieldnames = [
+            'train_team', 'train_seed', 'eval_team', 'eval_seed', 
+            'r_0', 'r_0_std', 'r_1', 'r_1_std'
+        ]
+        with open(f'{make_xpt_dir(cfg)}/results.csv', mode="w") as f:
+            with open(f"{make_xpt_dir(cfg)}/failures.csv", mode="w") as g:
+                
+                results_writer = csv.DictWriter(f, fieldnames=fieldnames)
+                results_writer.writeheader()
+                fail_writer = csv.DictWriter(g, fieldnames=fieldnames[:4])
+                for game_result in games:
+                    try:
+                        train_seed, eval_seed, training_coalition, evaluation_coalition = games[game_result]
+                        result = game_result.get()
+                        results_writer.writerow(result)
+                        f.flush()
+                        log.info(f"<finished> eval game {training_coalition.id}-{train_seed} vs {evaluation_coalition.id}-{eval_seed}")
+                    except Exception as ex:
+                        log.error(
+                            f'<FAIL> eval game {training_coalition.id}-{train_seed} vs {evaluation_coalition.id}-{eval_seed} with the following exception: \n',
+                            traceback.format_exc(),
+                            exc_info=ex
+                        )
+                        fail_writer.writerow({
+                            'train_team': training_coalition.id,
+                             'train_seed':train_seed, 
+                             'eval_team': evaluation_coalition.id,
+                            'eval_seed': eval_seed, 
+                        })
+                        g.flush()
 
 
 if __name__ == '__main__':

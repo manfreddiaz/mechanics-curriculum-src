@@ -12,8 +12,9 @@ eval:
   seed: 1234
   num_seeds: 1
 
+
 thread_pool:
-  size: 1
+  size: 8
   maxtasks: 4
 
 torch:

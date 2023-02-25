@@ -17,4 +17,4 @@ conda activate metacurriculum
 python main.py +xper=minatar_dqn_ordered ++thread_pool.size=16 ++run.outdir=$SLURM_TMPDIR/logs/static/
 
 # 5. Copy whatever you want to save on $SCRATCH
-cp -R $SLURM_TMPDIR/static/ /network/scratch/d/diazcabm/
+cp -R $SLURM_TMPDIR/logs/static/ /network/scratch/d/diazcabm/

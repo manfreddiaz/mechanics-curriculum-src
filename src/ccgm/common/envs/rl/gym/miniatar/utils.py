@@ -17,7 +17,7 @@ class ChannelFirstFloatObservationWrapper(gym.ObservationWrapper):
         )
 
     def observation(self, observation: np.array):
-        obs = observation.astype(np.uint8) * 255
+        obs = observation.astype(np.uint8) * 255.0
         return obs.transpose(2, 0, 1)
 
 

@@ -35,7 +35,7 @@ def make_coalition(
     elif order == 'ordered':
         return OrderedCoalition(
             strategies=[
-                gym.make(player) for player in team.players
+                make_minatar_env(player) for player in team.players
             ],
             probs=probs,
             time_limit=total_time_limit

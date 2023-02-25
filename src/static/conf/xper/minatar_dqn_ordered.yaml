@@ -1,0 +1,16 @@
+# @package _global_
+defaults:
+  - override /alg: dqn
+  - override /agent: q_minatar
+  - override /task: minatar
+
+alg:
+  rparams:
+    total_timesteps: 1000000
+
+task:
+  order: ordered
+  episode_limit: 10000
+
+run:
+  num_seeds: 3

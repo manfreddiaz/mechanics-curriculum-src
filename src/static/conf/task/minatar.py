@@ -3,7 +3,7 @@ from typing import List, Union
 import gym
 from stable_baselines3 import DQN, PPO
 from ccgm.common.coalitions import Coalition, OrderedCoalition
-from ccgm.common.envs.rl.gym.miniatar.utils import ChannelFirstFloatObservationWrapper
+from ccgm.common.envs.rl.gym.miniatar.utils import MinAtarStandardObservation
 from ccgm.common.games import CooperativeMetaGame
 from ccgm.utils import CoalitionalGame
 
@@ -15,7 +15,7 @@ from ccgm.common.envs.rl.gym.miniatar import (
 
 def make_minatar_env(env_id: str) -> gym.Env:
     env = gym.make(env_id)
-    env = ChannelFirstFloatObservationWrapper(env)
+    env = MinAtarStandardObservation(env)
     return env
 
 def make_coalition(

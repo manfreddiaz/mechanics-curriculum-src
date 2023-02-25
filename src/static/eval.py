@@ -59,8 +59,8 @@ def load_coalition_models(
         raise FileNotFoundError(final_model)
 
     device = torch.device(cfg.torch.device) 
-    i_model = torch.load(initial_model).to(device)
-    f_model = torch.load(final_model).to(device)
+    i_model = torch.load(initial_model, map_location=device)
+    f_model = torch.load(final_model, map_location=device)
 
     return i_model, f_model
 

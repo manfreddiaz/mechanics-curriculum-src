@@ -2,5 +2,5 @@ _target_: conf.task.minatar.make_task
 id: minatar
 order: random
 num_envs: 1
-version: 1  # [0, 1, all]
+version: 0  # [0, 1, all]
 episode_limit: 1000

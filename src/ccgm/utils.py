@@ -42,7 +42,7 @@ class Coalition:
     id: str = None
 
     def __post_init__(self):
-        self.id = Coalition.to_id(self)
+        self.id = Coalition.to_id(self.players)
     
     @classmethod
     def from_id(cls, id: str):
@@ -54,8 +54,8 @@ class Coalition:
         )
 
     @classmethod
-    def to_id(cls, coalition) -> 'str':
-        return '+'.join(list(coalition.players))
+    def to_id(cls, players) -> 'str':
+        return '+'.join(list(players))
 
 
 @dataclass

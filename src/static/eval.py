@@ -15,26 +15,9 @@ from hydra.core.global_hydra import GlobalHydra
 from omegaconf import DictConfig, OmegaConf
 
 from ccgm.utils import Coalition
+from utils import hydra_custom_resolvers, make_xpt_coalition_dir, make_xpt_dir
 
 log = logging.getLogger(__name__)
-
-def make_xpt_dir(cfg):
-    return os.path.join(
-        cfg.run.outdir,
-        f"{cfg.task.id}", 
-        f"{cfg.task.order}",
-        f"{cfg.alg.id}"
-    )
-
-def make_xpt_coalition_dir(
-    training_coalition: Coalition,
-    cfg: DictConfig
-):
-    
-    return os.path.join(
-        make_xpt_dir(cfg), 
-        f'game-{str(training_coalition.idx)}'
-    )
 
 
 def load_coalition_models(
@@ -153,23 +136,7 @@ def eval(
     }
 
 
-def hydra_load_node(x: str):
-    cfg = hydra.compose(f"{x}.yaml")
-    cfg = cfg[list(cfg.keys())[0]]
-    return cfg
-
-OmegaConf.register_new_resolver(
-    "bmult", lambda x, y: x * y
-)
-
-OmegaConf.register_new_resolver(
-    "bdiv", lambda x, y: x // y
-)
-
-OmegaConf.register_new_resolver(
-    "load", hydra_load_node
-)
-
+hydra_custom_resolvers()
 @hydra.main(version_base=None, config_path="conf", config_name="eval")
 def main(
     cfg: DictConfig

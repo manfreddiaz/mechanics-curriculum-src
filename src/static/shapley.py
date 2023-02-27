@@ -36,6 +36,9 @@ def compute_shapley(values: pd.Series, players: list[str], ordered: bool = False
             if not ordered:
                 next_coalition_idx = sorted(next_coalition)
                 coalition_idx = sorted(coalition)
+            else:
+                next_coalition_idx = next_coalition
+                coalition_idx = coalition            
             # maintain permutation invariance by order
             next_coalition_id = Coalition.to_id(players[next_coalition_idx])
             # print(next_coalition, coalition)

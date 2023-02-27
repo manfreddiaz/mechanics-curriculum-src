@@ -3,6 +3,9 @@ defaults:
   - /xper: minatar_dqn
 
 eval:
+  alg: ${load:alg/sqn}
+  task: ${load:task/minatar}
+  agent: ${load:agent/q_minatar}
   total_timesteps: 5000 
   seed: 1234
   num_seeds: 1

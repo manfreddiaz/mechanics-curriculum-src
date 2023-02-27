@@ -114,13 +114,14 @@ def compute(cfg: DictConfig):
     trainer_df = pd.DataFrame.from_dict(eval_teams)
     trainer_df.to_csv(os.path.join(indir, f'trainer_{cfg.method}_{cfg.metric}.csv'))
 
-    # evaluator cooperative game
-    train_teams = {team: None for team in meta_game.index}
-    for team in train_teams:
-       train_teams[team] = method(meta_game.loc[team] * -1.0, players)
+    if cfg.task.order == 'random': 
+        # evaluator cooperative game
+        train_teams = {team: None for team in meta_game.index}
+        for team in train_teams:
+            train_teams[team] = method(meta_game.loc[team] * -1.0, players)
     
-    evaluator_df = pd.DataFrame.from_dict(train_teams)
-    evaluator_df.to_csv(os.path.join(indir, f'evaluator_{cfg.method}_{cfg.metric}.csv'))
+        evaluator_df = pd.DataFrame.from_dict(train_teams)
+        evaluator_df.to_csv(os.path.join(indir, f'evaluator_{cfg.method}_{cfg.metric}.csv'))
 
 
 hydra_custom_resolvers()

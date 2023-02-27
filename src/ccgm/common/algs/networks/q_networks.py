@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -57,3 +58,7 @@ class MinAtarQNetwork(nn.Module):
 
         # Returns the output from the fully-connected linear layer
         return self.output(x)
+    
+    def predict(self, x):
+        q_values = self(x)
+        return torch.argmax(q_values, dim=1)

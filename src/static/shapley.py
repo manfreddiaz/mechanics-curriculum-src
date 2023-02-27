@@ -21,7 +21,7 @@ from static.utils import make_xpt_dir, hydra_custom_resolvers
 log = logging.getLogger(__name__)
 
 
-def compute_shapley(values: pd.Series, players: list[str]) -> List[float]:
+def compute_shapley(values: pd.Series, players: list[str], ordered: bool = False) -> List[float]:
     scaler = preprocessing.MinMaxScaler((-1, 1))
     n_values = scaler.fit_transform(values.to_numpy().reshape(-1, 1))
     values.iloc[:, ] = n_values.flatten()
@@ -30,14 +30,17 @@ def compute_shapley(values: pd.Series, players: list[str]) -> List[float]:
     players_idx = np.arange(len(players))
     players = np.array(players)
 
-    def forward_dynamics(coalition: list, invariant: bool = True):
+    def forward_dynamics(coalition: list):
         for player_idx in filter(lambda x: x not in coalition, players_idx):
             next_coalition = coalition + [player_idx]
+            if not ordered:
+                next_coalition_idx = sorted(next_coalition)
+                coalition_idx = sorted(coalition)
             # maintain permutation invariance by order
-            next_coalition_id = Coalition.to_id(players[sorted(next_coalition)])
+            next_coalition_id = Coalition.to_id(players[next_coalition_idx])
             # print(next_coalition, coalition)
             if len(coalition) > 0:
-                coalition_id = Coalition.to_id(players[sorted(coalition)])
+                coalition_id = Coalition.to_id(players[coalition_idx])
                 value[players[player_idx]] += values[next_coalition_id] - values[coalition_id]
             else:
                 value[players[player_idx]] += values[next_coalition_id]
@@ -51,8 +54,9 @@ def compute_shapley(values: pd.Series, players: list[str]) -> List[float]:
 
     return value
 
-def compute_nowak_radzik(df: pd.Series) -> List[float]:
-    pass
+
+def compute_nowak_radzik(values: pd.Series, players: list[str]) -> List[float]:
+    return compute_shapley(values, players, True)
 
 def compute_sanchez_bergantinos(df: pd.Series) -> List[float]:
     pass

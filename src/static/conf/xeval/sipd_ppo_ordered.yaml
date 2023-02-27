@@ -1,0 +1,11 @@
+# @package _global_
+defaults:
+  - /xper: sipd_ppo_ordered
+
+eval:
+  alg: ${load:alg/ppo}
+  task: ${load:task/sipd}
+  agent: ${load:agent/ac_mlp}
+  total_timesteps: 1000 
+  seed: 1234
+  num_seeds: 1

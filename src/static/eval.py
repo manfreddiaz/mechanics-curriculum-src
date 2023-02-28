@@ -14,14 +14,14 @@ import hydra
 from hydra.core.global_hydra import GlobalHydra
 from omegaconf import DictConfig, OmegaConf
 
-from ccgm.utils import Coalition
+from ccgm.utils import CoalitionMetadata
 from utils import hydra_custom_resolvers, make_xpt_coalition_dir, make_xpt_dir
 
 log = logging.getLogger(__name__)
 
 
 def load_coalition_models(
-    training_coalition: Coalition,
+    training_coalition: CoalitionMetadata,
     seed: int,
     cfg: DictConfig
 ):
@@ -70,8 +70,8 @@ def eval_model(
 
 
 def eval(
-    training_coalition: Coalition,
-    evaluation_coalition: Coalition, 
+    training_coalition: CoalitionMetadata,
+    evaluation_coalition: CoalitionMetadata, 
     train_seed: int,
     eval_seed: int,
     cfg: DictConfig

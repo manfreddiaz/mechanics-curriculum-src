@@ -19,14 +19,14 @@ def make_coalition(
 
     if not ordered:
         return Coalition(
-            strategies=[
+            players=[
                 gym.make(strategy_id) for strategy_id in team
             ],
             probs=probs
         )
     else:
         return OrderedCoalition(
-            strategies=[
+            players=[
                 gym.make(strategy_id) for strategy_id in team
             ],
             probs=probs,

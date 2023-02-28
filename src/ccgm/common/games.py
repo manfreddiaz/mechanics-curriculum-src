@@ -158,11 +158,11 @@ if __name__ == '__main__':
     env = CooperativeMetaGame(
         env=env,
         nature_strategy=Coalition(
-            strategies=['always_defect', 'tit_for_tat'],
+            players=['always_defect', 'tit_for_tat'],
             strategy_factory=prisioner_dilemma.pd_nature_strategy_factory
         ),
         principal_strategy=Coalition(
-            strategies=['default'],
+            players=['default'],
             strategy_factory=prisioner_dilemma.pd_principal_strategy_factory
         )
     )

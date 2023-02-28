@@ -43,7 +43,7 @@ def make_coalition(
 
     if order == 'random':
         return Coalition(
-            strategies=[
+            players=[
                 make_env(
                     env_id=player,
                     episode_time_limit=episode_time_limit,
@@ -55,7 +55,7 @@ def make_coalition(
         )
     elif order == 'ordered':
         return OrderedCoalition(
-            strategies=[
+            players=[
                 make_env(
                     env_id=player,
                     episode_time_limit=episode_time_limit,

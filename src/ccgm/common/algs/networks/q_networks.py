@@ -18,6 +18,10 @@ class MlpQNetwork(nn.Module):
     def forward(self, x):
         return self.network(x)
 
+    def predict(self, x):
+        q_values = self(x)
+        return torch.argmax(q_values, dim=1)
+
 
 class MinAtarQNetwork(nn.Module):
     # https://github.com/kenjyoung/MinAtar/blob/master/examples/dqn.py

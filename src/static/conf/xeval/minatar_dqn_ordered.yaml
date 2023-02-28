@@ -1,11 +1,11 @@
 # @package _global_
 defaults:
-  - /xper: minatar_dqn
+  - /xper: minatar_dqn_ordered
 
 eval:
   alg: ${load:alg/dqn}
   task: ${load:task/minatar}
   agent: ${load:agent/q_minatar}
-  total_timesteps: 5000 
+  total_timesteps: 1000 
   seed: 1234
   num_seeds: 1

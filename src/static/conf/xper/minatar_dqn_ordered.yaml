@@ -13,4 +13,5 @@ task:
   episode_limit: 10000
 
 run:
+  seed: 0
   num_seeds: 3

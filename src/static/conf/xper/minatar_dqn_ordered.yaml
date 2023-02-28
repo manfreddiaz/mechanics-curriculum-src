@@ -15,3 +15,4 @@ task:
 run:
   seed: 0
   num_seeds: 3
+  outdir: logs/static/

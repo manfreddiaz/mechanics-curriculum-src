@@ -94,7 +94,14 @@ def compute_sanchez_bergantinos(values: pd.Series, players: list[str]) -> List[f
     return value
 
 
-def compute(cfg: DictConfig):
+hydra_custom_resolvers()
+@hydra.main(version_base=None, config_path="conf", config_name="shapley")
+def main(
+    cfg: DictConfig
+) -> None:
+    
+    log = logging.getLogger(__name__)
+    
     indir = make_xpt_dir(cfg)
 
     df = pd.read_csv(os.path.join(indir, 'results.csv'))
@@ -152,17 +159,6 @@ def compute(cfg: DictConfig):
     
         evaluator_df = pd.DataFrame.from_dict(train_teams)
         evaluator_df.to_csv(os.path.join(indir, f'evaluator_{cfg.method}_{cfg.metric}.csv'))
-
-
-hydra_custom_resolvers()
-@hydra.main(version_base=None, config_path="conf", config_name="shapley")
-def main(
-    cfg: DictConfig
-) -> None:
-    
-    log = logging.getLogger(__name__)
-    
-    compute(cfg)
 
 
 if __name__ == '__main__':

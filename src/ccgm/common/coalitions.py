@@ -39,7 +39,7 @@ class OrderedCoalition(Coalition):
         self.time_limit = time_limit
         self.time = 0
         if probs is not None:
-            self.probs = probs
+            self.probs = np.array(probs)
         else:
             self.probs = np.ones(len(players)) / len(players)
         self.segments = np.floor(np.cumsum(self.probs * self.time_limit))

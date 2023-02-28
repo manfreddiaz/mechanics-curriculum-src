@@ -11,7 +11,7 @@ from sklearn import preprocessing
 import hydra
 from omegaconf import DictConfig
 
-from ccgm.utils import Coalition
+from ccgm.utils import CoalitionMetadata
 from static.utils import make_xpt_dir, hydra_custom_resolvers
 
 log = logging.getLogger(__name__)
@@ -36,10 +36,10 @@ def compute_shapley(values: pd.Series, players: list[str], ordered: bool = False
                 next_coalition_idx = next_coalition
                 coalition_idx = coalition            
             # maintain permutation invariance by order
-            next_coalition_id = Coalition.to_id(players[next_coalition_idx])
+            next_coalition_id = CoalitionMetadata.to_id(players[next_coalition_idx])
             # print(next_coalition, coalition)
             if len(coalition) > 0:
-                coalition_id = Coalition.to_id(players[coalition_idx])
+                coalition_id = CoalitionMetadata.to_id(players[coalition_idx])
                 value[players[player_idx]] += values[next_coalition_id] - values[coalition_id]
             else:
                 value[players[player_idx]] += values[next_coalition_id]
@@ -70,10 +70,10 @@ def compute_sanchez_bergantinos(values: pd.Series, players: list[str]) -> List[f
         for player in coalition:
             next_coalition = list(coalition)
             next_coalition.remove(player)
-            coalition_id = Coalition.to_id(players[coalition])
+            coalition_id = CoalitionMetadata.to_id(players[coalition])
             # log.info((coalition, next_coalition))
             if len(next_coalition) > 0:
-                next_coalition_id = Coalition.to_id(players[next_coalition])
+                next_coalition_id = CoalitionMetadata.to_id(players[next_coalition])
                 value[players[player]] += values[coalition_id] - values[next_coalition_id]
             else:
                 value[players[player]] += values[coalition_id]

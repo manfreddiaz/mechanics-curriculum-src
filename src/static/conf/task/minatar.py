@@ -27,14 +27,14 @@ def make_coalition(
 
     if order == 'random':
         return Coalition(
-            strategies=[
+            players=[
                 make_minatar_env(player) for player in team.players
             ],
             probs=probs
         )
     elif order == 'ordered':
         return OrderedCoalition(
-            strategies=[
+            players=[
                 make_minatar_env(player) for player in team.players
             ],
             probs=probs,

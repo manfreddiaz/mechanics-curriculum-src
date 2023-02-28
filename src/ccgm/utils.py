@@ -18,7 +18,7 @@ def form_coalitions(
     for i in range(min_order, max_order + 1):
         for team in coalesce(players, i):
             # teams.append(team)
-            coalition = Coalition(
+            coalition = CoalitionMetadata(
                 players=team,
                 idx=idx,
                 ordered=ordered
@@ -26,27 +26,20 @@ def form_coalitions(
             idx += 1
             yield coalition
 
-
-# def coalition_to_id(team: List):
-#     return '+'.join(list(team))
-
-
-# def id_to_coalition(id: str):
-#     return id.split('+')
-
 @dataclass
-class Coalition:
+class CoalitionMetadata:
     players: List[str]
     idx: int
     ordered: bool
     id: str = None
+    probs: list = None
 
     def __post_init__(self):
-        self.id = Coalition.to_id(self.players)
+        self.id = CoalitionMetadata.to_id(self.players)
     
     @classmethod
     def from_id(cls, id: str):
-        return Coalition(
+        return CoalitionMetadata(
             players=id.split('+'),
             idx=None,
             ordered=None,
@@ -61,7 +54,7 @@ class Coalition:
 @dataclass
 class CoalitionalGame:
     players: Iterable
-    coalitions: Iterable[Coalition]
+    coalitions: Iterable[CoalitionMetadata]
 
     @classmethod
     def make(cls, players: List, ordered: bool)-> 'CoalitionalGame':

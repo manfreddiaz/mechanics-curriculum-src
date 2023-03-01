@@ -12,21 +12,18 @@ import hydra
 from omegaconf import DictConfig
 
 from ccgm.utils import CoalitionMetadata
-from static.utils import make_xpt_dir, hydra_custom_resolvers
+from src.static.utils import make_xpt_dir, hydra_custom_resolvers
 
 log = logging.getLogger(__name__)
 
 
 def compute_shapley(values: pd.Series, players: list[str], ordered: bool = False) -> List[float]:
-    scaler = preprocessing.MinMaxScaler((-1, 1))
-    n_values = scaler.fit_transform(values.to_numpy().reshape(-1, 1))
-    values.iloc[:, ] = n_values.flatten()
-
     value = {player: 0.0 for player in players}
     players_idx = np.arange(len(players))
     players = np.array(players)
 
     def forward_dynamics(coalition: list):
+        
         for player_idx in filter(lambda x: x not in coalition, players_idx):
             next_coalition = coalition + [player_idx]
             if not ordered:
@@ -37,15 +34,15 @@ def compute_shapley(values: pd.Series, players: list[str], ordered: bool = False
                 coalition_idx = coalition            
             # maintain permutation invariance by order
             next_coalition_id = CoalitionMetadata.to_id(players[next_coalition_idx])
-            # print(next_coalition, coalition)
+            coalition_id = CoalitionMetadata.to_id(players[coalition_idx])
+            
             if len(coalition) > 0:
-                coalition_id = CoalitionMetadata.to_id(players[coalition_idx])
                 value[players[player_idx]] += values[next_coalition_id] - values[coalition_id]
             else:
-                value[players[player_idx]] += values[next_coalition_id]
+                value[next_coalition_id] += (players.shape[0] - 1) * values[next_coalition_id]
             
             forward_dynamics(next_coalition)
-    
+
     forward_dynamics([])
     
     norm = math.factorial(players.shape[0])
@@ -140,8 +137,13 @@ def main(
     task, _ = hydra.utils.instantiate(cfg.task)
     players = [player for player in task.players]
     # trainer cooperative game
+    
+
     eval_teams = {team: None for team in meta_game.columns} # eval teams
     for team in eval_teams:
+        scaler = preprocessing.MinMaxScaler((-1, 1))
+        n_values = scaler.fit_transform(meta_game[team].to_numpy().reshape(-1, 1))
+        meta_game[team].iloc[:, ] = n_values.flatten()
         eval_teams[team] = method(meta_game[team], players)
     # save trainers
     trainer_df = pd.DataFrame.from_dict(eval_teams)

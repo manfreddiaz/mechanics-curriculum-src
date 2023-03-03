@@ -11,80 +11,10 @@ from sklearn import preprocessing
 import hydra
 from omegaconf import DictConfig
 
-from ccgm.utils import CoalitionMetadata
-from src.static.utils import make_xpt_dir, hydra_custom_resolvers
+import static.core as core
+from static.utils import make_xpt_dir, hydra_custom_resolvers
 
 log = logging.getLogger(__name__)
-
-
-def compute_shapley(values: pd.Series, players: list[str], ordered: bool = False) -> List[float]:
-    value = {player: 0.0 for player in players}
-    players_idx = np.arange(len(players))
-    players = np.array(players)
-
-    def forward_dynamics(coalition: list):
-        
-        for player_idx in filter(lambda x: x not in coalition, players_idx):
-            next_coalition = coalition + [player_idx]
-            if not ordered:
-                next_coalition_idx = sorted(next_coalition)
-                coalition_idx = sorted(coalition)
-            else:
-                next_coalition_idx = next_coalition
-                coalition_idx = coalition            
-            # maintain permutation invariance by order
-            next_coalition_id = CoalitionMetadata.to_id(players[next_coalition_idx])
-            coalition_id = CoalitionMetadata.to_id(players[coalition_idx])
-            
-            if len(coalition) > 0:
-                value[players[player_idx]] += values[next_coalition_id] - values[coalition_id]
-            else:
-                value[next_coalition_id] += (players.shape[0] - 1) * values[next_coalition_id]
-            
-            forward_dynamics(next_coalition)
-
-    forward_dynamics([])
-    
-    norm = math.factorial(players.shape[0])
-    value = {player: value * norm ** -1 for player, value in value.items()}
-
-    return value
-
-
-def compute_nowak_radzik(values: pd.Series, players: list[str]) -> List[float]:
-    return compute_shapley(values, players, True)
-
-def compute_sanchez_bergantinos(values: pd.Series, players: list[str]) -> List[float]:
-    scaler = preprocessing.MinMaxScaler((-1, 1))
-    n_values = scaler.fit_transform(values.to_numpy().reshape(-1, 1))
-    values.iloc[:, ] = n_values.flatten()
-
-    value = {player: 0.0 for player in players}
-    players_idx = np.arange(len(players))
-    players = np.array(players)
-
-    def backward_dynamics(coalition: list):
-        for player in coalition:
-            next_coalition = list(coalition)
-            next_coalition.remove(player)
-            coalition_id = CoalitionMetadata.to_id(players[coalition])
-            # log.info((coalition, next_coalition))
-            if len(next_coalition) > 0:
-                next_coalition_id = CoalitionMetadata.to_id(players[next_coalition])
-                value[players[player]] += values[coalition_id] - values[next_coalition_id]
-            else:
-                value[players[player]] += values[coalition_id]
-            
-            backward_dynamics(next_coalition)
-
-
-    for coalition in permutations(players_idx):
-        backward_dynamics(list(coalition))
-
-    norm = math.factorial(players.shape[0]) ** 2
-    value = {player: value * norm ** -1 for player, value in value.items()}
-
-    return value
 
 
 hydra_custom_resolvers()
@@ -116,13 +46,13 @@ def main(
     
     if cfg.method == 'shapley':
         assert cfg.task.order == 'random'            
-        method = compute_shapley
+        method = core.shapley
     elif cfg.method == 'nowak_radzik':
         assert cfg.task.order == 'ordered'
-        method = compute_nowak_radzik
+        method = core.nowak_radzik
     elif cfg.method == 'sanchez_bergantinos':
         assert cfg.task.order == 'ordered'
-        method = compute_sanchez_bergantinos
+        method = core.sanchez_bergantinos
     else:
         raise NotImplementedError(cfg.method)
     

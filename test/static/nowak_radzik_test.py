@@ -4,8 +4,7 @@ from ccgm.utils import form_coalitions
 
 import numpy as np
 
-from src.static.shapley import compute_shapley
-
+import src.static.core as core
 
 class TestNowakRadzik(unittest.TestCase):
 
@@ -29,10 +28,9 @@ class TestNowakRadzik(unittest.TestCase):
             '2': 12/18,
             '3': 15/18
         }
-        shapley = compute_shapley(
+        shapley = core.nowak_radzik(
             pd.Series(characteristic),
             players=players,
-            ordered=True
         )
 
         self.assert_(all(np.isclose(s_shapley[key], shapley[key]) for key in shapley))
@@ -47,10 +45,9 @@ class TestNowakRadzik(unittest.TestCase):
             '1': 0,
             '2': 0.5,
         }
-        shapley = compute_shapley(
+        shapley = core.nowak_radzik(
             pd.Series(characteristic),
             players=players,
-            ordered=True
         )
 
         self.assert_(all(np.isclose(s_shapley[key], shapley[key]) for key in shapley))
@@ -71,10 +68,9 @@ class TestNowakRadzik(unittest.TestCase):
             '2': 0.5,
             '3': 0.5
         }
-        shapley = compute_shapley(
+        shapley = core.nowak_radzik(
             pd.Series(characteristic),
             players=players,
-            ordered=True
         )
 
         self.assert_(all(np.isclose(s_shapley[key], shapley[key]) for key in shapley))

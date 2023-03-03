@@ -4,7 +4,7 @@ from ccgm.utils import form_coalitions
 
 import numpy as np
 
-from src.static.shapley import compute_shapley
+import src.static.core as core 
 
 class TestShapley(unittest.TestCase):
 
@@ -25,7 +25,7 @@ class TestShapley(unittest.TestCase):
             '2': 1/6,
             '3': 2/3
         }
-        shapley = compute_shapley(
+        shapley = core.shapley(
             pd.Series(characteristic),
             players=players,
             ordered=False
@@ -50,7 +50,7 @@ class TestShapley(unittest.TestCase):
             '2': 30.0,
             '3': 120.0
         }
-        shapley = compute_shapley(
+        shapley = core.shapley(
             pd.Series(characteristic),
             players=players,
             ordered=False
@@ -70,7 +70,7 @@ class TestShapley(unittest.TestCase):
             '1': 1.5,
             '2': 2.5,
         }
-        shapley = compute_shapley(
+        shapley = core.shapley(
             pd.Series(characteristic),
             players=players,
             ordered=False
@@ -90,7 +90,7 @@ class TestShapley(unittest.TestCase):
             '1': 1100000.,
             '2': 300000,
         }
-        shapley = compute_shapley(
+        shapley = core.shapley(
             pd.Series(characteristic),
             players=players,
             ordered=False
@@ -116,7 +116,7 @@ class TestShapley(unittest.TestCase):
             '6':  571428.57142857,
             '7':  571428.57142857
         }
-        shapley = compute_shapley(
+        shapley = core.shapley(
             pd.Series(characteristic),
             players=players,
             ordered=False

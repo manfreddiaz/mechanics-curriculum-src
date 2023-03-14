@@ -34,6 +34,86 @@ class vPoPTest(unittest.TestCase):
 
         self.assert_(np.isclose(vpop, s_vpop).astype(float).mean() == 1.0)
     
+    def test_hausken_mohr_2(self):
+        players = ['1', '2', '3']
+        characteristic = {
+            '': 0.0,
+            '1': 0.0,
+            '2': 0.0,
+            '3': 0.0,
+            '1+2': 1.0,
+            '1+3': 1.0,
+            '2+3': 1.0,
+            '1+2+3': 1.0
+        }
+        s_vpop = np.array([
+            [0.27778, 0.02778, 0.02778],
+            [0.02778, 0.27778, 0.02778],
+            [0.02778, 0.02778, 0.27778]
+        ])
+        vpop = core.vpop(
+            pd.Series(characteristic),
+            players=players,
+            ordered=False
+        )
+        vpop = np.round(vpop, 5)
+
+        self.assert_(np.isclose(vpop, s_vpop).astype(float).mean() == 1.0)
+
+    def test_hausken_mohr_3(self):
+        players = ['1', '2', '3']
+        characteristic = {
+            '': 0.0,
+            '1': 0.0,
+            '2': 0.0,
+            '3': 0.0,
+            '1+2': 1.0,
+            '1+3': 1.0,
+            '2+3': 0.0,
+            '1+2+3': 1.0
+        }
+        s_vpop = np.array([
+            [0.3889, 0.1389, 0.1389],
+            [0.1389, 0.1389, -0.1111],
+            [0.1389, -0.1111, 0.1389]
+        ])
+        vpop = core.vpop(
+            pd.Series(characteristic),
+            players=players,
+            ordered=False
+        )
+        vpop = np.round(vpop, 4)
+
+        self.assert_(np.isclose(vpop, s_vpop).astype(float).mean() == 1.0)
+    
+    def test_hausken_mohr_4(self):
+        players = ['1', '2', '3', '4']
+        
+        characteristic = { coalition.id: 0.0 for coalition in form_coalitions(players)}
+        characteristic[''] = 0.0
+        characteristic['1+2'] = 1.0
+        characteristic['1+3'] = 1.0
+        characteristic['1+4'] = 1.0
+        characteristic['1+2+3'] = 1.0
+        characteristic['1+2+4'] = 1.0
+        characteristic['1+3+4'] = 1.0
+        characteristic['2+3+4'] = 1.0
+        characteristic['1+2+3+4'] = 1.0 
+
+        s_vpop = np.array([
+            [0.4167, 0.0278, 0.0278, 0.0278],
+            [0.0278, 0.1389, 0.0,    0.0],
+            [0.0278, 0.0,    0.1389, 0.0],
+            [0.0278, 0.0,    0.0,    0.1389]
+        ])
+        vpop = core.vpop(
+            pd.Series(characteristic),
+            players=players,
+            ordered=False
+        )
+        vpop = np.round(vpop, 4)
+
+        self.assert_(np.isclose(vpop, s_vpop).astype(float).mean() == 1.0)
 
     def test_shapley_wiki(self):
         players = ['1', '2', '3']
@@ -57,7 +137,7 @@ class vPoPTest(unittest.TestCase):
         shapley = vpop.sum(axis=1)
 
         self.assert_(np.isclose(shapley, s_shapley).astype(float).mean() == 1.0)
-    
+   
     def test_gto_understanding(self):
         # from https://youtu.be/9OFMRiAVH-w?t=815
         players = ['1', '2']

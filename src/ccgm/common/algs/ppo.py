@@ -2,13 +2,11 @@
 
 from dataclasses import dataclass, astuple
 import time
-from typing import List
 
 import gym
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.optim as optim
 
 
 @dataclass
@@ -29,7 +27,12 @@ class OnPolicyReplayBuffer:
     returns: torch.Tensor
 
     def __iter__(self):
-        return iter(astuple(self))
+        fields = [
+            self.obs, self.actions, self.logprobs, 
+            self.rewards, self.dones, self.values, 
+            self.advantages, self.returns]
+        for field in fields:
+            yield field
     
 @dataclass
 class OnPolicyAgent:
@@ -60,16 +63,16 @@ class PPORparams:
     minibatch_size: int
 
 
-
 class PPO:
     
     @staticmethod
     def play(
         agent: OnPolicyAgent,
+        next_obs: torch.Tensor,
+        next_done: torch.Tensor,
         envs: gym.vector.SyncVectorEnv,
         hparams: PPOHparams,
         rparams: PPORparams,
-        device: torch.device, 
         logger,
         global_step: int,
         log_every,
@@ -80,8 +83,6 @@ class PPO:
         policy = agent.policy
         # interact on policy
         for step in range(0, hparams.num_steps):
-            # TODO: move away
-            # global_step += 1 * task.num_envs
             obs[step] = next_obs
             dones[step] = next_done
 
@@ -104,10 +105,10 @@ class PPO:
                     logger.add_scalar("charts/episodic_length", item["episode"]["l"], global_step)
                     break
             
-            if global_step % log_every == 0:
+            if log_every != -1 and global_step % log_every == 0:
                 assert log_file_format is not None
                 torch.save(
-                    policy,
+                    agent,
                     log_file_format.format(global_step)
                 )
 
@@ -128,7 +129,7 @@ class PPO:
                 # I did it to make the update straight in the agent memory
                 returns[t] = advantages[t] + values[t]
 
-        return 
+        return next_obs, next_done
 
     @staticmethod
     def optimize(
@@ -137,13 +138,16 @@ class PPO:
         hparams: PPOHparams,
         rparams: PPORparams,
         logger,
-        global_step
+        global_step: int,
+        log_every: int,
+        log_file_format: str,
     ):
-        obs, logprobs, actions, advantages, returns, values = agent.memory
+        
         
         policy = agent.policy
         optimizer = agent.optimizer 
 
+        obs, actions, logprobs, _, _, values, advantages, returns = agent.memory
         # flatten the batch
         b_obs = obs.reshape((-1,) + envs.single_observation_space.shape)
         b_logprobs = logprobs.reshape(-1)
@@ -242,13 +246,14 @@ class PPO:
         log_every: int = -1, # means no intermediate save log
         log_file_format: str = None
     ):
-        # env setup
         # TRY NOT TO MODIFY: start the game
         global_step = 0
         start_time = time.time()
        
         num_updates = rparams.total_timesteps // rparams.batch_size
-
+        
+        next_obs = torch.Tensor(envs.reset()).to(device)
+        next_done = torch.zeros(envs.num_envs).to(device)
         for update in range(1, num_updates + 1):
             if hparams.anneal_lr:
                 # Annealing the rate if instructed to do so.
@@ -256,12 +261,13 @@ class PPO:
                 lrnow = frac * hparams.learning_rate
                 agent.optimizer.param_groups[0]["lr"] = lrnow
             
-            PPO.play(
+            next_obs, next_done = PPO.play(
                 agent=agent,
+                next_obs=next_obs,
+                next_done=next_done,
                 envs=envs,
                 hparams=hparams,
                 rparams=rparams,
-                device=device,
                 logger=logger,
                 global_step=global_step,
                 log_every=log_every,
@@ -275,9 +281,10 @@ class PPO:
                 envs=envs,
                 hparams=hparams,
                 rparams=rparams,
-                device=device,
                 logger=logger,
-                global_step=global_step
+                global_step=global_step,
+                log_every=log_every,
+                log_file_format=log_file_format
             )
             
             logger.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)

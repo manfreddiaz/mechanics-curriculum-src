@@ -29,8 +29,11 @@ class CooperativeMetaGame(gym.Wrapper):
         if done:
             self.env = self._meta_strategy()
 
-        
         return next_state, reward, done, info
+
+    def seed(self, seed=None):
+        self._meta_strategy.seed(seed)
+        return super().seed(seed)
         
 
 class CooperativeMetaGameEnvironment(gym.Env):

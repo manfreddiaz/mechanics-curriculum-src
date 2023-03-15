@@ -51,6 +51,4 @@ class OrderedCoalition(Coalition):
         action = np.searchsorted(self.segments, self.time)
         action = min(action, len(self._strategy_space) - 1)
         self.time += 1
-        # print(self.time, action.nature_strategy.name)
-        # print(self.time)
         return self._strategy_space[action]

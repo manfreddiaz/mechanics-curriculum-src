@@ -14,7 +14,7 @@ thread_pool:
     maxtasks: 4
 
 torch:
-    deterministic: false  
+    deterministic: true  
     device: cuda
 
 log:

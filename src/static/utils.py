@@ -89,7 +89,10 @@ def play(
     log.info(f'<build> agent {cfg.agent.id} from config.') 
     make_agent = hydra.utils.instantiate(cfg.agent)
     agent = make_agent(envs)
-    torch.save(agent, os.path.join(team_dir, f'{seed}i.model.ckpt'))
+    torch.save(
+        agent, 
+        os.path.join(team_dir, f'{seed}i.model.ckpt')
+    )
 
     log.info(f'<build> algorithm {cfg.alg.id} from config')
     make_alg = hydra.utils.instantiate(cfg.alg)
@@ -101,6 +104,8 @@ def play(
         task=cfg.task,
         logger=SummaryWriter(os.path.join(team_dir, f'tb-{str(seed)}')),
         device=torch.device(cfg.torch.device),
+        log_every=cfg.run.log_every,
+        log_file_format=os.path.join(team_dir, f'{seed}' + '-{}.model.ckpt')
     )
 
     torch.save(

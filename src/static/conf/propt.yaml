@@ -12,13 +12,14 @@ run:
     seed: 0
     num_seeds: 5
     outdir: logs/static/
+    log_every: 10000
     
 thread_pool:
     size: 8
     maxtasks: 4
 
 torch:
-    deterministic: false  
+    deterministic: true  
     device: cuda
 
 log:

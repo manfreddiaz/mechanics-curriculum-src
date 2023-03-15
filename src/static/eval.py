@@ -15,7 +15,7 @@ from hydra.core.global_hydra import GlobalHydra
 from omegaconf import DictConfig, OmegaConf
 
 from ccgm.utils import CoalitionMetadata
-from utils import hydra_custom_resolvers, make_xpt_coalition_dir, make_xpt_dir
+from static.utils import hydra_custom_resolvers, make_xpt_coalition_dir, make_xpt_dir
 
 log = logging.getLogger(__name__)
 

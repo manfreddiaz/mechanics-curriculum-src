@@ -12,8 +12,8 @@ import hydra
 from omegaconf import DictConfig
 
 from ccgm.utils import CoalitionMetadata
-from static.utils import hydra_custom_resolvers
 
+from static.utils import hydra_custom_resolvers
 from static.utils import play
 
 def proportional_shapley(values: np.array):
@@ -26,7 +26,10 @@ def proportional_shapley(values: np.array):
 
 
 def coalition_from_shapley_value(players: list[str], indir: str, cfg: DictConfig):
-    value = pd.read_csv(os.path.join(indir, f"trainer_{cfg.propt.method}_final.csv"))
+    value = pd.read_csv(
+        os.path.join(indir, f"trainer_{cfg.propt.method}_final.csv"),
+        index_col=0
+    )
     # NOTE: Shapley values are additive
     propt = proportional_shapley(value.sum(axis=1)).to_numpy()
     if cfg.task.order == "ordered":

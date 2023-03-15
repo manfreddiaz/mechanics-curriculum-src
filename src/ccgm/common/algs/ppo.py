@@ -14,8 +14,6 @@ import torch.optim as optim
 from .networks.p_networks import MlpPolicy
 from .networks.v_networks import MlpValueNetwork
 
-from .utils import load_defaults
-
 
 @dataclass
 class ActorCritic:
@@ -24,7 +22,6 @@ class ActorCritic:
 
 
 class PPO:
-    defaults: dict = load_defaults(__file__)
     def __init__(
         self,
         envs: List,
@@ -33,7 +30,7 @@ class PPO:
     ) -> None:
         assert isinstance(envs.single_action_space, gym.spaces.Discrete), "only discrete action space is supported"
         self._envs = envs
-        self._hparams = hparams #Namespace(PPO.defaults.update(hparams))
+        self._hparams = hparams
         self._rparams = rparams 
 
     def learn(
@@ -42,6 +39,8 @@ class PPO:
         task,
         logger,
         device,
+        log_every: int = -1, # means no intermediate save log
+        log_file_format: str = None
     ):
         # env setup
         hparams = self._hparams
@@ -95,6 +94,13 @@ class PPO:
                         logger.add_scalar("charts/episodic_return", item["episode"]["r"], global_step)
                         logger.add_scalar("charts/episodic_length", item["episode"]["l"], global_step)
                         break
+                
+                if global_step % log_every == 0:
+                    assert log_file_format is not None
+                    torch.save(
+                        agent,
+                        log_file_format.format(global_step)
+                    )
 
             # bootstrap value if not done
             with torch.no_grad():
@@ -174,6 +180,8 @@ class PPO:
                 if hparams.target_kl is not None:
                     if approx_kl > hparams.target_kl:
                         break
+
+            
 
             y_pred, y_true = b_values.cpu().numpy(), b_returns.cpu().numpy()
             var_y = np.var(y_true)

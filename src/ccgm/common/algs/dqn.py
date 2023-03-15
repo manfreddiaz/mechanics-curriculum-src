@@ -47,6 +47,8 @@ class DQN:
         task,
         logger,
         device,
+        log_every: int = -1, # means no intermediate save log
+        log_file_format: str = None
     ):
         hparams = self._hparams
         rparams = self._rparams
@@ -130,5 +132,12 @@ class DQN:
                         target_network_param.data.copy_(
                             hparams.tau * q_network_param.data + (1.0 - hparams.tau) * target_network_param.data
                         )
+            
+            if global_step % log_every == 0:
+                assert log_file_format is not None
+                torch.save(
+                    agent,
+                    log_file_format.format(global_step)
+                )
 
 

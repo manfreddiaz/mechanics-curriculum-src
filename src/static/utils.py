@@ -55,6 +55,10 @@ def play(
     outdir, 
     cfg: DictConfig
 ):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    
     log = logging.getLogger()
     # loggging and saving config
     team_dir = os.path.join(outdir, f'game-{str(coalition.idx)}')
@@ -65,10 +69,6 @@ def play(
     if os.path.exists(final_model):
         log.info(f"<duplicate> game {coalition.id} with: {coalition.id}, seed: {seed}")
         return 0
-
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
 
     log.info(f"<playing> game {coalition.idx} with: {coalition.id}, seed: {seed}")
     
@@ -88,7 +88,11 @@ def play(
 
     log.info(f'<build> agent {cfg.agent.id} from config.') 
     make_agent = hydra.utils.instantiate(cfg.agent)
-    agent = make_agent(envs)
+    agent = make_agent(
+        envs=envs,
+        hparams=cfg.alg.hparams,
+        device=torch.device(cfg.torch.device)
+    )
     torch.save(
         agent, 
         os.path.join(team_dir, f'{seed}i.model.ckpt')
@@ -96,12 +100,13 @@ def play(
 
     log.info(f'<build> algorithm {cfg.alg.id} from config')
     make_alg = hydra.utils.instantiate(cfg.alg)
-    algorithm = make_alg(envs=envs)
+    learn_fn = make_alg(
+        envs=envs
+    )
     
     log.info(f'<learn>')
-    algorithm.learn(
+    learn_fn(
         agent=agent,
-        task=cfg.task,
         logger=SummaryWriter(os.path.join(team_dir, f'tb-{str(seed)}')),
         device=torch.device(cfg.torch.device),
         log_every=cfg.run.log_every,

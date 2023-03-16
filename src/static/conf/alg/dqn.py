@@ -1,5 +1,6 @@
 
 
+import functools
 from omegaconf import DictConfig
 from ccgm.common.algs.dqn import DQN
 
@@ -12,11 +13,11 @@ def make_alg(
     def make_dqn(
         envs
     ):
-        alg = DQN(
+        return functools.partial(
+            DQN.learn,
             envs=envs,
-            rparams=rparams,
-            hparams=hparams
+            hparams=hparams,
+            rparams=rparams
         )
-        return alg
 
     return make_dqn

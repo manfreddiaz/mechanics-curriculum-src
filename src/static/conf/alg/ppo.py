@@ -1,4 +1,7 @@
+import functools
 from omegaconf import DictConfig
+import gym
+import torch
 
 from ccgm.common.algs.ppo import PPO
 
@@ -9,13 +12,14 @@ def make_alg(
     rparams: DictConfig
 ):
     def make_ppo(
-        envs
+        envs: gym.vector.VectorEnv
     ):
-        agent = PPO(
+        return functools.partial(
+            PPO.learn,
             envs=envs,
-            rparams=rparams,
-            hparams=hparams
+            hparams=hparams,
+            rparams=rparams
         )
-        return agent
+        
 
     return make_ppo

@@ -30,7 +30,8 @@ class OnPolicyReplayBuffer:
         fields = [
             self.obs, self.actions, self.logprobs, 
             self.rewards, self.dones, self.values, 
-            self.advantages, self.returns]
+            self.advantages, self.returns
+        ]
         for field in fields:
             yield field
     
@@ -75,8 +76,9 @@ class PPO:
         rparams: PPORparams,
         logger,
         global_step: int,
-        log_every,
-        log_file_format,
+        log_every: int,
+        log_file_format: int,
+        device: torch.device
     ):
 
         obs, actions, logprobs, rewards, dones, values, advantages, returns = agent.memory
@@ -95,8 +97,8 @@ class PPO:
 
             # TRY NOT TO MODIFY: execute the game and log data.
             next_obs, reward, done, info = envs.step(action.cpu().numpy())
-            rewards[step] = torch.tensor(reward).to(rewards.device).view(-1)
-            next_obs, next_done = torch.Tensor(next_obs).to(obs.device), torch.Tensor(done).to(dones.device)
+            rewards[step] = torch.tensor(reward).to(device).view(-1)
+            next_obs, next_done = torch.Tensor(next_obs).to(device), torch.Tensor(done).to(device)
 
             for item in info:
                 if "episode" in item.keys():
@@ -271,7 +273,8 @@ class PPO:
                 logger=logger,
                 global_step=global_step,
                 log_every=log_every,
-                log_file_format=log_file_format
+                log_file_format=log_file_format,
+                device=device
             )
 
             global_step += 1 * envs.num_envs * hparams.num_steps

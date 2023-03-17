@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 import random
 import time
+from typing import Tuple
 
 import gym
 import numpy as np
@@ -10,18 +11,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-def linear_schedule(start_e: float, end_e: float, duration: int, t: int):
-    slope = (end_e - start_e) / duration
-    return max(slope * t + start_e, end_e)
-
-
-class OffPolicyReplayBuffer:
-
-    def sample(self):
-        pass
-
-    def add(self):
-        pass
+from ccgm.common.algs.core import Agent
 
 
 @dataclass
@@ -30,11 +20,21 @@ class QPolicyWithTarget:
     target_network: nn.Module
 
 
+class OffPolicyReplayBuffer:
+    def sample(self):
+        pass
+
+    def add(self):
+        pass
+
+
 @dataclass
-class OffPolicyAgent:
-    policy: QPolicyWithTarget
-    memory: OffPolicyReplayBuffer
-    optimizer: torch.optim.Optimizer
+class OffPolicyAgent(
+    Agent[
+        QPolicyWithTarget, OffPolicyReplayBuffer, torch.optim.Optimizer
+    ]
+):
+    pass
 
 
 @dataclass
@@ -55,6 +55,11 @@ class RParamsDQN:
     batch_size: int
 
 
+def linear_schedule(start_e: float, end_e: float, duration: int, t: int):
+    slope = (end_e - start_e) / duration
+    return max(slope * t + start_e, end_e)
+
+
 class DQN:
 
     @staticmethod
@@ -70,17 +75,19 @@ class DQN:
         log_every: int,
         log_file_format,
         device: torch.device
-    ):
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         policy = agent.policy
         memory = agent.memory
 
         epsilon = linear_schedule(
-            hparams.start_e, hparams.end_e, 
-            hparams.exploration_fraction * rparams.total_timesteps, 
+            hparams.start_e, hparams.end_e,
+            hparams.exploration_fraction * rparams.total_timesteps,
             global_step
         )
         if random.random() < epsilon:
-            actions = np.array([envs.single_action_space.sample() for _ in range(envs.num_envs)])
+            actions = np.array([
+                envs.single_action_space.sample() for _ in range(envs.num_envs)
+            ])
         else:
             q_values = policy.q_network(torch.Tensor(obs).to(device))
             actions = torch.argmax(q_values, dim=1).cpu().numpy()
@@ -92,30 +99,32 @@ class DQN:
         for info in infos:
             if "episode" in info.keys():
                 # log.info(f"global_step={global_step}, episodic_return={info['episode']['r']}")
-                logger.add_scalar("charts/episodic_return", info["episode"]["r"], global_step)
-                logger.add_scalar("charts/episodic_length", info["episode"]["l"], global_step)
+                logger.add_scalar("charts/episodic_return",
+                                  info["episode"]["r"], global_step)
+                logger.add_scalar("charts/episodic_length",
+                                  info["episode"]["l"], global_step)
                 logger.add_scalar("charts/epsilon", epsilon, global_step)
                 break
 
-        # TRY NOT TO MODIFY: save data to reply buffer; handle `terminal_observation`
+        # handle `terminal_observation`
         real_next_obs = next_obs.copy()
         for idx, d in enumerate(dones):
             if d:
                 real_next_obs[idx] = infos[idx]["terminal_observation"]
         memory.add(obs, real_next_obs, actions, rewards, dones, infos)
-    
-        return next_obs, dones
+
+        return 1 * envs.num_envs
 
     @staticmethod
     def optimize(
         agent: OffPolicyAgent,
         envs: gym.vector.VectorEnv,
+        global_step: int,
         hparams: HParamsDQN,
         rparams: RParamsDQN,
         logger,
-        global_step: int,
         log_every: int,
-        log_file_format: str,   
+        log_file_format: str,
     ):
         # ALGO LOGIC: training.
         rb = agent.memory
@@ -127,15 +136,18 @@ class DQN:
             if global_step % hparams.train_frequency == 0:
                 data = rb.sample(rparams.batch_size)
                 with torch.no_grad():
-                    target_max, _ = target_network(data.next_observations).max(dim=1)
-                    td_target = data.rewards.flatten() + hparams.gamma * target_max * (1 - data.dones.flatten())
-                old_val = q_network(data.observations).gather(1, data.actions).squeeze()
+                    target_max, _ = target_network(
+                        data.next_observations).max(dim=1)
+                    td_target = data.rewards.flatten() + hparams.gamma * target_max * \
+                        (1 - data.dones.flatten())
+                old_val = q_network(data.observations).gather(
+                    1, data.actions).squeeze()
                 loss = F.mse_loss(td_target, old_val)
 
                 if global_step % 100 == 0:
                     logger.add_scalar("losses/td_loss", loss, global_step)
-                    logger.add_scalar("losses/q_values", old_val.mean().item(), global_step)
-                    
+                    logger.add_scalar("losses/q_values",
+                                      old_val.mean().item(), global_step)
                 # optimize the model
                 optimizer.zero_grad()
                 loss.backward()
@@ -143,11 +155,17 @@ class DQN:
 
             # update target network
             if global_step % hparams.target_network_frequency == 0:
-                for target_network_param, q_network_param in zip(target_network.parameters(), q_network.parameters()):
+                for target_network_param, q_network_param in zip(
+                    target_network.parameters(), q_network.parameters()
+                ):
                     target_network_param.data.copy_(
-                        hparams.tau * q_network_param.data + (1.0 - hparams.tau) * target_network_param.data
+                        hparams.tau * q_network_param.data +
+                        (1.0 - hparams.tau) * target_network_param.data
                     )
-        
+
+            return 1
+
+        return 0
 
     def learn(
         agent: OffPolicyAgent,
@@ -156,7 +174,7 @@ class DQN:
         rparams: RParamsDQN,
         logger,
         device,
-        log_every: int = -1, # means no intermediate save log
+        log_every: int = -1,  # means no intermediate save log
         log_file_format: str = None
     ):
         start_time = time.time()
@@ -190,13 +208,12 @@ class DQN:
                 log_file_format=log_file_format
             )
 
-            logger.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
-            
+            logger.add_scalar("charts/SPS", int(global_step /
+                              (time.time() - start_time)), global_step)
+
             if log_every != -1 and global_step % log_every == 0:
                 assert log_file_format is not None
                 torch.save(
                     agent,
                     log_file_format.format(global_step)
                 )
-
-

@@ -1,26 +1,21 @@
 
-import logging
 import gym
 from omegaconf import DictConfig
+
 import torch
-
-from ccgm.common.algs.networks.ac_network import MlpActorCritic
+from ccgm.common.algs.networks.ac_network import MinatarActorCritic
 from ccgm.common.algs.ppo import OnPolicyAgent, OnPolicyReplayBuffer
-
-log = logging.getLogger(__name__)
 
 
 def make_agent(
     id: str
 ):
-    log.info(f'building agent: {id}')
-
     def agent_fn(
         envs: gym.vector.VectorEnv,
         hparams: DictConfig,
         device: torch.device
     ):
-        policy = MlpActorCritic(envs).to(device)
+        policy = MinatarActorCritic(envs).to(device)
         agent = OnPolicyAgent(
             policy=policy,
             memory=OnPolicyReplayBuffer(

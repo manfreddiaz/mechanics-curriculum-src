@@ -1,20 +1,29 @@
 import functools
 from typing import List, Union
-
+import gym
 from ccgm.common.coalitions import Coalition, OrderedCoalition
-from ccgm.common.envs.rl.gym.miniatar import (MINATAR_STRATEGIES_all,
-                                              MINATAR_STRATEGIES_v0,
-                                              MINATAR_STRATEGIES_v1,
-                                              make_minatar_env)
+from ccgm.common.envs.rl.gym.miniatar.utils import MinAtarStandardObservation
 from ccgm.common.games import CooperativeMetaGame
 from ccgm.utils import CoalitionalGame
+
+from ccgm.common.envs.rl.gym.miniatar import (
+    MINATAR_STRATEGIES_v0,
+    MINATAR_STRATEGIES_v1,
+    MINATAR_STRATEGIES_all
+)
+
+
+def make_minatar_env(env_id: str) -> gym.Env:
+    env = gym.make(env_id)
+    env = MinAtarStandardObservation(env)
+    return env
 
 
 def make_coalition(
     team,
     order,
     total_time_limit: int,
-    probs: list = None,
+    probs: List = None,
 ):
 
     if order == 'random':
@@ -77,7 +86,7 @@ def make_task(
     )
 
     def make_game(team, probs=None):
-        make_env = functools.partial(
+        make_env = functools.partial( 
             make_cooperative_env,
             team=team,
             order=order,

@@ -56,7 +56,7 @@ def eval_model(
 ):
     device = torch.device(cfg.torch.device) 
     rewards = np.zeros(shape=(env.num_envs, num_steps)) 
-    
+
     obs = env.reset()
     for step in range(num_steps):
         action = model.predict(torch.tensor(obs, device=device))

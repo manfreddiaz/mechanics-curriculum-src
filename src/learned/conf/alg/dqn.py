@@ -1,9 +1,8 @@
+
+
 import functools
-
-import gym
 from omegaconf import DictConfig
-
-from ccgm.common.algs.ppo import PPO
+from ccgm.common.algs.dqn import DQN
 
 
 def make_alg(
@@ -11,14 +10,14 @@ def make_alg(
     hparams: DictConfig,
     rparams: DictConfig
 ):
-    def make_ppo(
-        envs: gym.vector.VectorEnv
+    def make_dqn(
+        envs
     ):
         return functools.partial(
-            PPO.learn,
+            DQN.learn,
             envs=envs,
             hparams=hparams,
             rparams=rparams
         )
 
-    return make_ppo
+    return make_dqn

@@ -1,10 +1,14 @@
 
 from typing import Callable, Union
 
-import numpy as np
 import gym
+import numpy as np
+from gym.wrappers import TimeLimit
+
+from ccgm.common.envs.utils import AutoResetWrapper
 
 from .strategies import NatureMemoryOneStrategy, PrincipalMarkovStrategy
+from .wrappers import OneHotObservationWrapper, SparseRewardWrapper
 
 
 class SequentialMatrixGameEnvironment(gym.Env):
@@ -82,3 +86,28 @@ class SequentialMatrixGameEnvironment(gym.Env):
             'nature_acc_reward': self.acc_rewards
         })
         return next_obs, agent_reward, done, info
+
+
+def make_env(
+    env_id: str,
+    episode_time_limit: int,
+    sparse: bool,
+    one_hot: bool
+):
+    env = gym.make(env_id)
+    env = TimeLimit(
+        env,
+        episode_time_limit
+    )
+    env = AutoResetWrapper(
+        env=env
+    )
+    if sparse:
+        env = SparseRewardWrapper(env)
+
+    if one_hot:
+        env = OneHotObservationWrapper(env)
+
+    env = gym.wrappers.RecordEpisodeStatistics(env)
+
+    return env

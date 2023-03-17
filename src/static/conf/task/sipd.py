@@ -1,15 +1,17 @@
 
 
 import functools
-from typing import Callable, List, Union
-import numpy as np
+from typing import List
+
 import gym
 from gym.wrappers import TimeLimit
-from omegaconf import DictConfig
 
-from ccgm.common.envs.sgt.impl.prisioner_dilemma import SPID_STRATEGIES
 from ccgm.common.coalitions import Coalition, OrderedCoalition
-from ccgm.common.envs.sgt.wrappers import SparseRewardWrapper, OneHotObservationWrapper
+from ccgm.common.envs.sgt.impl.prisioner_dilemma import SPID_STRATEGIES
+from ccgm.common.envs.sgt.wrappers import (
+    OneHotObservationWrapper,
+    SparseRewardWrapper
+)
 from ccgm.common.games import CooperativeMetaGame
 from ccgm.utils import CoalitionalGame
 
@@ -22,20 +24,20 @@ def make_env(env_id, episode_time_limit, sparse, one_hot):
     )
     if sparse:
         env = SparseRewardWrapper(env)
-    
+
     if one_hot:
         env = OneHotObservationWrapper(env)
-    
+
     env = gym.wrappers.RecordEpisodeStatistics(env)
 
     return env
 
 
 def make_coalition(
-    team: List, 
-    order: str, 
-    episode_time_limit: int, 
-    total_time_limit: int, 
+    team: List,
+    order: str,
+    episode_time_limit: int,
+    total_time_limit: int,
     probs: List[float] = None,
     sparse: bool = True,
     one_hot: bool = True
@@ -110,7 +112,7 @@ def make_task(
     )
 
     def make_agent_coalition_env(team: List, probs: List = None):
-        make_env = functools.partial( 
+        make_env = functools.partial(
             make_cooperative_env,
             team=team,
             ordered=order,
@@ -124,4 +126,3 @@ def make_task(
         return make_env
 
     return game_spec, make_agent_coalition_env
-

@@ -1,46 +1,27 @@
 # adapted from CleanRL
 import time
 from dataclasses import dataclass
+from typing import Protocol
 
 import gym
 import numpy as np
 import torch
 import torch.nn as nn
 
+from stable_baselines3.common.buffers import RolloutBuffer
+
 from ccgm.common.algs.core import Agent
 
 
-@dataclass
-class ActorCritic:
+class ActorCritic(Protocol):
     actor: nn.Module
     critic: nn.Module
 
 
 @dataclass
-class OnPolicyReplayBuffer:
-    obs: torch.Tensor
-    actions: torch.Tensor
-    logprobs: torch.Tensor
-    rewards: torch.Tensor
-    dones: torch.Tensor
-    values: torch.Tensor
-    advantages: torch.Tensor
-    returns: torch.Tensor
-
-    def __iter__(self):
-        fields = [
-            self.obs, self.actions, self.logprobs,
-            self.rewards, self.dones, self.values,
-            self.advantages, self.returns
-        ]
-        for field in fields:
-            yield field
-
-
-@dataclass
 class OnPolicyAgent(
     Agent[
-        ActorCritic, OnPolicyReplayBuffer, torch.optim.Optimizer
+        ActorCritic, RolloutBuffer, torch.optim.Optimizer
     ]
 ):
     pass
@@ -67,6 +48,7 @@ class PPORparams:
     total_timesteps: int
     batch_size: int
     minibatch_size: int
+    num_updates: int
 
 
 class PPO:
@@ -84,39 +66,33 @@ class PPO:
         device: torch.device
     ):
         policy = agent.policy
-        obs, actions, logprobs, rewards, dones, values, advantages, returns = agent.memory  # noqa
+        rb = agent.memory
 
-        # protocol: initialize from last observation
-        # first call: guaranteed to have an obs coming from env.reset()
-        # subsequent calls: last step of the previous interaction
-        next_obs = obs[-1]
+        next_obs = rb.observations[rb.pos % rb.buffer_size]
         # interact on policy
         steps = 0
         for step in range(0, hparams.num_steps):
             # TODO: reassigns the same obs at step=0
             steps += 1 * envs.num_envs
 
-            obs[step] = next_obs
+            obs = next_obs
             with torch.no_grad():
                 action, logprob, _, value = policy.get_action_and_value(
-                    next_obs)
-                values[step] = value.flatten()
-            actions[step] = action
-            logprobs[step] = logprob
+                    torch.tensor(next_obs).to(device)
+                )
 
-            # TRY NOT TO MODIFY: execute the game and log data.
-            next_obs, reward, done, info = envs.step(action.cpu().numpy())
-            rewards[step] = torch.tensor(reward).to(device).view(-1)
-            next_obs, next_done = torch.Tensor(next_obs).to(
-                device), torch.Tensor(done).to(device)
+            action = action.cpu().numpy()
+            next_obs, reward, done, info = envs.step(action)
 
-            for item in info:
-                if "episode" in item.keys():
-                    logger.add_scalar("charts/episodic_return",
-                                      item["episode"]["r"], global_step)
-                    logger.add_scalar("charts/episodic_length",
-                                      item["episode"]["l"], global_step)
-                    break
+            rb.add(obs, action, reward, done, value.flatten(), logprob)
+
+            # for item in info:
+            #     if "episode" in item.keys():
+            #         logger.add_scalar("charts/episodic_return",
+            #                           item["episode"]["r"], global_step)
+            #         logger.add_scalar("charts/episodic_length",
+            #                           item["episode"]["l"], global_step)
+            #         break
 
             if log_every != -1 and global_step % log_every == 0:
                 assert log_file_format is not None
@@ -125,24 +101,14 @@ class PPO:
                     log_file_format.format(global_step)
                 )
 
-        # bootstrap value if not done
         with torch.no_grad():
+            next_obs = torch.tensor(next_obs).to(device)
             next_value = policy.get_value(next_obs).reshape(1, -1)
-            lastgaelam = 0
-            for t in reversed(range(hparams.num_steps)):
-                if t == hparams.num_steps - 1:
-                    nextnonterminal = 1.0 - next_done
-                    nextvalues = next_value
-                else:
-                    nextnonterminal = 1.0 - dones[t + 1]
-                    nextvalues = values[t + 1]
-                delta = rewards[t] + hparams.gamma * \
-                    nextvalues * nextnonterminal - values[t]
-                advantages[t] = lastgaelam = delta + hparams.gamma * \
-                    hparams.gae_lambda * nextnonterminal * lastgaelam
-                # TODO: verify that this step is equivalent to the previous
-                # I did it to make the update straight in the agent memory
-                returns[t] = advantages[t] + values[t]
+
+        rb.compute_returns_and_advantage(
+            next_value,
+            done
+        )
 
         return steps
 
@@ -156,19 +122,29 @@ class PPO:
         global_step: int,
         log_every: int,
         log_file_format: str,
+        device: torch.device
     ):
+
+        if hparams.anneal_lr:
+            # Annealing the rate if instructed to do so.
+            update = global_step / hparams.num_steps
+            frac = 1.0 - (update - 1.0) / rparams.num_updates
+            lrnow = frac * hparams.learning_rate
+            agent.optimizer.param_groups[0]["lr"] = lrnow
 
         policy = agent.policy
         optimizer = agent.optimizer
+        rb = agent.memory
 
-        obs, actions, logprobs, _, _, values, advantages, returns = agent.memory
         # flatten the batch
-        b_obs = obs.reshape((-1,) + envs.single_observation_space.shape)
-        b_logprobs = logprobs.reshape(-1)
-        b_actions = actions.reshape((-1,) + envs.single_action_space.shape)
-        b_advantages = advantages.reshape(-1)
-        b_returns = returns.reshape(-1)
-        b_values = values.reshape(-1)
+        b_obs = torch.tensor(rb.observations.reshape(
+            (-1,) + envs.single_observation_space.shape)).to(device)
+        b_logprobs = torch.tensor(rb.log_probs.reshape(-1)).to(device)
+        b_actions = torch.tensor(rb.actions.reshape(
+            (-1,) + envs.single_action_space.shape)).to(device)
+        b_advantages = torch.tensor(rb.advantages.reshape(-1)).to(device)
+        b_returns = torch.tensor(rb.returns.reshape(-1)).to(device)
+        b_values = torch.tensor(rb.values.reshape(-1)).to(device)
 
         # Optimizing the policy and value network
         b_inds = np.arange(rparams.batch_size)
@@ -201,7 +177,7 @@ class PPO:
                 if hparams.norm_adv:
                     mb_advantages = (
                         mb_advantages - mb_advantages.mean()
-                        ) / (mb_advantages.std() + 1e-8)
+                    ) / (mb_advantages.std() + 1e-8)
 
                 # Policy loss
                 pg_loss1 = -mb_advantages * ratio
@@ -246,23 +222,23 @@ class PPO:
         explained_var = np.nan if var_y == 0 else 1 - \
             np.var(y_true - y_pred) / var_y
 
-        if logger:
-            # TRY NOT TO MODIFY: record rewards for plotting purposes
-            logger.add_scalar("charts/learning_rate",
-                              optimizer.param_groups[0]["lr"], global_step)
-            logger.add_scalar("losses/value_loss", v_loss.item(), global_step)
-            logger.add_scalar("losses/policy_loss",
-                              pg_loss.item(), global_step)
-            logger.add_scalar("losses/entropy",
-                              entropy_loss.item(), global_step)
-            logger.add_scalar("losses/old_approx_kl",
-                              old_approx_kl.item(), global_step)
-            logger.add_scalar("losses/approx_kl",
-                              approx_kl.item(), global_step)
-            logger.add_scalar("losses/clipfrac",
-                              np.mean(clipfracs), global_step)
-            logger.add_scalar("losses/explained_variance",
-                              explained_var, global_step)
+        # if logger:
+        #     # TRY NOT TO MODIFY: record rewards for plotting purposes
+        #     logger.add_scalar("charts/learning_rate",
+        #                       optimizer.param_groups[0]["lr"], global_step)
+        #     logger.add_scalar("losses/value_loss", v_loss.item(), global_step)
+        #     logger.add_scalar("losses/policy_loss",
+        #                       pg_loss.item(), global_step)
+        #     logger.add_scalar("losses/entropy",
+        #                       entropy_loss.item(), global_step)
+        #     logger.add_scalar("losses/old_approx_kl",
+        #                       old_approx_kl.item(), global_step)
+        #     logger.add_scalar("losses/approx_kl",
+        #                       approx_kl.item(), global_step)
+        #     logger.add_scalar("losses/clipfrac",
+        #                       np.mean(clipfracs), global_step)
+        #     logger.add_scalar("losses/explained_variance",
+        #                       explained_var, global_step)
         # print("SPS:", int(global_step / (time.time() - start_time)))
 
         return steps
@@ -282,17 +258,11 @@ class PPO:
         global_step = 0
         start_time = time.time()
 
-        num_updates = rparams.total_timesteps // rparams.batch_size
+        # num_updates = rparams.total_timesteps // rparams.batch_size
 
         agent.memory.obs[0] = torch.Tensor(envs.reset()).to(device)
-        agent.memory.dones[0] = torch.zeros(envs.num_envs).to(device)
-        for update in range(1, num_updates + 1):
-            if hparams.anneal_lr:
-                # Annealing the rate if instructed to do so.
-                frac = 1.0 - (update - 1.0) / num_updates
-                lrnow = frac * hparams.learning_rate
-                agent.optimizer.param_groups[0]["lr"] = lrnow
-
+        # agent.memory.dones[0] = torch.zeros(envs.num_envs).to(device)
+        for update in range(1, rparams.num_updates + 1):
             steps = PPO.play(
                 agent=agent,
                 envs=envs,
@@ -320,6 +290,9 @@ class PPO:
 
             logger.add_scalar("charts/SPS", int(global_step /
                               (time.time() - start_time)), global_step)
+
+            if agent.memory.full:
+                agent.memory.reset()
 
         return agent
 

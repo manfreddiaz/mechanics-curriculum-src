@@ -12,6 +12,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from ccgm.common.algs.core import Agent
+from stable_baselines3.common.buffers import ReplayBuffer
 
 
 @dataclass
@@ -20,18 +21,10 @@ class QPolicyWithTarget:
     target_network: nn.Module
 
 
-class OffPolicyReplayBuffer:
-    def sample(self):
-        pass
-
-    def add(self):
-        pass
-
-
 @dataclass
 class OffPolicyAgent(
     Agent[
-        QPolicyWithTarget, OffPolicyReplayBuffer, torch.optim.Optimizer
+        QPolicyWithTarget, ReplayBuffer, torch.optim.Optimizer
     ]
 ):
     pass
@@ -95,16 +88,6 @@ class DQN:
         # TRY NOT TO MODIFY: execute the game and log data.
         next_obs, rewards, dones, infos = envs.step(actions)
 
-        # TRY NOT TO MODIFY: record rewards for plotting purposes
-        for info in infos:
-            if "episode" in info.keys():
-                # log.info(f"global_step={global_step}, episodic_return={info['episode']['r']}")
-                logger.add_scalar("charts/episodic_return",
-                                  info["episode"]["r"], global_step)
-                logger.add_scalar("charts/episodic_length",
-                                  info["episode"]["l"], global_step)
-                logger.add_scalar("charts/epsilon", epsilon, global_step)
-                break
 
         # handle `terminal_observation`
         real_next_obs = next_obs.copy()

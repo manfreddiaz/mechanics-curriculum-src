@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 
 def make_agent(id: str):
     def agent_fn(
-        envs:gym.vector.VectorEnv,
+        envs: gym.vector.VectorEnv,
         hparams: DictConfig,
         device: torch.device
     ):
@@ -34,8 +34,9 @@ def make_agent(id: str):
                 device,
                 handle_timeout_termination=True,
             ),
-            optimizer=torch.optim.Adam(q_network.parameters(), lr=hparams.learning_rate, eps=1e-5)
+            optimizer=torch.optim.Adam(
+                q_network.parameters(), lr=hparams.learning_rate, eps=1e-5)
         )
         return agent
-    
+
     return agent_fn

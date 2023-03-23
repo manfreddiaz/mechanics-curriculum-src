@@ -5,6 +5,8 @@ rparams:
   total_timesteps: 100000
   batch_size: ${bmult:${task.num_envs},${alg.hparams.num_steps}}
   minibatch_size: ${bdiv:${alg.rparams.batch_size},${alg.hparams.num_minibatches}}
+  num_updates: ${bdiv:${alg.rparams.total_timesteps}, ${alg.rparams.batch_size}}
+
 
 hparams:
   learning_rate: 0.0025

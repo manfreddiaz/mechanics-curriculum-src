@@ -1,17 +1,19 @@
-
-from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Callable, Generic, Protocol, Tuple, TypeVar
-import torch
+from typing import Callable, Generic, Protocol, TypeVar
+
 import gym  # noqa
+import torch
+from stable_baselines3.common.buffers import BaseBuffer
 
 PolicyType = TypeVar("PolicyType")
-ReplayBufferType = TypeVar("ReplayBufferType")
+ReplayBufferType = TypeVar("ReplayBufferType", bound=BaseBuffer)
 OptimizerType = TypeVar("OptimizerType", bound=torch.optim.Optimizer)
 
 
 @dataclass
-class Agent(Generic[PolicyType, ReplayBufferType, OptimizerType]):
+class Agent(
+    Protocol, Generic[PolicyType, ReplayBufferType, OptimizerType]
+):
     policy: PolicyType
     memory: ReplayBufferType
     optimizer: OptimizerType

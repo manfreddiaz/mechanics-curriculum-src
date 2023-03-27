@@ -8,6 +8,7 @@ run:
     seed: 0
     num_seeds: 5
     outdir: logs/static/
+    log_every: -1
     
 thread_pool:
     size: 1

@@ -1,0 +1,26 @@
+{
+  "players": [
+    "SIPD/TitForTat-Default-v0",
+    "SIPD/WinStayLoseSwitch-Default-v0",
+    "SIPD/AlwaysCooperate-Default-v0",
+    "SIPD/ExtortionateZD-Default-v0",
+    "SIPD/AlwaysDefect-Default-v0"
+  ],
+  "idx": 0,
+  "ordered": true,
+  "id": "SIPD/TitForTat-Default-v0+SIPD/WinStayLoseSwitch-Default-v0+SIPD/AlwaysCooperate-Default-v0+SIPD/ExtortionateZD-Default-v0+SIPD/AlwaysDefect-Default-v0",
+  "probs": [
+    0.2692277488209493,
+    0.20845509103441265,
+    0.19088956905028634,
+    0.17882885370557267,
+    0.15259873738877913
+  ],
+  "additive": [
+    0.0015957861891029259,
+    -0.22228745731590405,
+    0.3454583691482353,
+    0.08962432517694373,
+    -0.06367007822751765
+  ]
+}

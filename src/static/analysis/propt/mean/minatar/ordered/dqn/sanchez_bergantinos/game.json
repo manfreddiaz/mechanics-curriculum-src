@@ -1,0 +1,26 @@
+{
+  "players": [
+    "MinAtar/Asterix-v0",
+    "MinAtar/SpaceInvaders-v0",
+    "MinAtar/Seaquest-v0",
+    "MinAtar/Freeway-v0",
+    "MinAtar/Breakout-v0"
+  ],
+  "idx": 0,
+  "ordered": true,
+  "id": "MinAtar/Asterix-v0+MinAtar/SpaceInvaders-v0+MinAtar/Seaquest-v0+MinAtar/Freeway-v0+MinAtar/Breakout-v0",
+  "probs": [
+    0.21709607211567328,
+    0.20229700227415526,
+    0.19549736622597078,
+    0.19393925776845106,
+    0.19117030161574958
+  ],
+  "additive": [
+    -0.05219500861256858,
+    -0.17937033054580953,
+    -0.1649899870716623,
+    -0.15698808547652146,
+    -0.12279806697706282
+  ]
+}

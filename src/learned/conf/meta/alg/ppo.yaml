@@ -1,11 +1,11 @@
-_target_: conf.alg.ppo.make_alg
+_target_: factories.alg.ppo.make_alg
 id: ppo
 
 rparams:
   total_timesteps: 100000
-  batch_size: ${bmult:${task.num_envs},${alg.hparams.num_steps}}
-  minibatch_size: ${bdiv:${alg.rparams.batch_size},${alg.hparams.num_minibatches}}
-  num_updates: ${bdiv:${alg.rparams.total_timesteps}, ${alg.rparams.batch_size}}
+  batch_size: ${bmult:${meta.task.num_envs},${meta.alg.hparams.num_steps}}
+  minibatch_size: ${bdiv:${meta.alg.rparams.batch_size},${meta.alg.hparams.num_minibatches}}
+  num_updates: ${bdiv:${meta.alg.rparams.total_timesteps}, ${meta.alg.rparams.batch_size}}
 
 
 hparams:

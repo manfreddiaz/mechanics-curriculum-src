@@ -30,12 +30,16 @@ class MetaTrainingEnvironment(gym.Env[Agent, int]):
         self._alg_play_fn, self._alg_optim_fn = alg_fn()
         # environments
         self._train_envs = env_fn()
-        self._need_reset = [True] * len(self._train_envs) 
+        self._need_reset = [True] * len(self._train_envs)
         self._eval_envs = env_fn()
 
         # evaluation function
         self._eval_fn = eval_fn
 
+        # action space interpretation
+        # 0 - n train on tasks
+        # n + 1 reset training agent
+        # n + 2 noop
         self.action_space = gym.spaces.Discrete(len(self._train_envs))
 
     def reset(
@@ -99,6 +103,8 @@ class MetaTrainingEnvironment(gym.Env[Agent, int]):
         info['meta_optimized'] = optim_steps > 0
         info['optim_steps'] = optim_steps
         info['play_steps'] = play_steps
+        info['train_action'] = trainer_action
+        info['eval_action'] = evaluator_action
 
         return self._agent, reward, False, info
 

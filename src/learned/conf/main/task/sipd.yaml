@@ -1,4 +1,4 @@
-_target_: conf.task.sipd.make_task
+_target_: factories.task.sipd.make_task
 id: sipd
 order: random
 num_envs: 1

@@ -86,7 +86,7 @@ def make_task(
     )
 
     def make_game(team, probs=None):
-        make_env = functools.partial( 
+        make_env = functools.partial(
             make_cooperative_env,
             team=team,
             order=order,

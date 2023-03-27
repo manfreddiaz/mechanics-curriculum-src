@@ -1,4 +1,4 @@
-_target_: conf.alg.dqn.make_alg
+_target_: factories.alg.dqn.make_alg
 id: dqn
 
 rparams:

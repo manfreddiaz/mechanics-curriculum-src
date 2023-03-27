@@ -1,0 +1,4 @@
+_target_: factories.meta.meta_game_with_index.make_task
+meta_player_id: 0 # trainer
+episode_time_limit: 50
+num_envs: 1

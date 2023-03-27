@@ -1,26 +1,25 @@
 
 import logging
 import gym
-import numpy as np
 from omegaconf import DictConfig
 import torch
-import torch.nn as nn
 
 from stable_baselines3.common.buffers import ReplayBuffer
 from ccgm.common.algs.dqn import OffPolicyAgent, QPolicyWithTarget
-from ccgm.common.algs.networks.q_networks import MlpQNetwork
+from ccgm.common.algs.networks.q_networks import MinAtarQNetwork
+
 
 log = logging.getLogger(__name__)
 
 
 def make_agent(id: str):
     def agent_fn(
-        envs:gym.vector.VectorEnv,
+        envs: gym.vector.VectorEnv,
         hparams: DictConfig,
         device: torch.device
     ):
-        q_network = MlpQNetwork(envs).to(device)
-        target_network = MlpQNetwork(envs).to(device)
+        q_network = MinAtarQNetwork(envs).to(device)
+        target_network = MinAtarQNetwork(envs).to(device)
         target_network.load_state_dict(q_network.state_dict())
         agent = OffPolicyAgent(
             policy=QPolicyWithTarget(
@@ -34,8 +33,9 @@ def make_agent(id: str):
                 device,
                 handle_timeout_termination=True,
             ),
-            optimizer=torch.optim.Adam(q_network.parameters(), lr=hparams.learning_rate, eps=1e-5)
+            optimizer=torch.optim.Adam(
+                q_network.parameters(), lr=hparams.learning_rate, eps=1e-5)
         )
         return agent
-        
+
     return agent_fn

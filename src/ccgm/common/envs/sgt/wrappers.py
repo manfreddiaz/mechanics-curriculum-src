@@ -15,7 +15,9 @@ class OneHotObservationWrapper(gym.ObservationWrapper):
 
     def observation(self, observation):
         obs = np.zeros(self.observation_space.shape, dtype=np.float32)
-        obs[observation] = 1.0
+        if observation is not None:
+            assert observation < self.env.observation_space.n
+            obs[observation] = 1.0
         return obs
 
 

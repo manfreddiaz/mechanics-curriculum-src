@@ -1,4 +1,4 @@
-_target_: conf.task.minatar.make_task
+_target_: factories.task.minatar.make_task
 id: minatar
 order: random
 num_envs: 1

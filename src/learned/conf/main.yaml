@@ -1,8 +1,11 @@
 defaults:
     - _self_
-    - alg: ppo
-    - agent: ac_mlp
-    - task: sipd
+    - main/alg: ppo
+    - main/agent: ac_mlp
+    - main/task: sipd
+    - meta/alg: ppo
+    - meta/agent: ac_mlp
+    - meta/task: task_with_index
 
 run:
     seed: 0
@@ -20,3 +23,4 @@ torch:
 
 log:
     level: 0
+

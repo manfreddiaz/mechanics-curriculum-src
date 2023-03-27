@@ -1,0 +1,2 @@
+_target_: factories.agent.q_minatar.make_agent
+id: q_minatar

@@ -27,7 +27,7 @@ class MetaTrainingEnvironment(gym.Env[Agent, int]):
         # state
         self._learning_step: int = None
         self._agent: Agent = None
-        self._alg_play_fn, self._alg_optim_fn = alg_fn()
+        self._alg_play_fn, self._alg_optim_fn, _ = alg_fn()
         # environments
         self._train_envs = env_fn()
         self._need_reset = [True] * len(self._train_envs)

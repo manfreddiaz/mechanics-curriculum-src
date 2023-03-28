@@ -86,13 +86,16 @@ class PPO:
 
             rb.add(obs, action, reward, done, value.flatten(), logprob)
 
-            # for item in info:
-            #     if "episode" in item.keys():
-            #         logger.add_scalar("charts/episodic_return",
-            #                           item["episode"]["r"], global_step)
-            #         logger.add_scalar("charts/episodic_length",
-            #                           item["episode"]["l"], global_step)
-            #         break
+            if logger:
+                for item in info:
+                    if "episode" in item.keys():
+                        logger.add_scalar(
+                            "charts/episodic_return",
+                            item["episode"]["r"], global_step)
+                        logger.add_scalar(
+                            "charts/episodic_length",
+                            item["episode"]["l"], global_step)
+                        break
 
             if log_every != -1 and global_step % log_every == 0:
                 assert log_file_format is not None
@@ -222,24 +225,24 @@ class PPO:
         explained_var = np.nan if var_y == 0 else 1 - \
             np.var(y_true - y_pred) / var_y
 
-        # if logger:
-        #     # TRY NOT TO MODIFY: record rewards for plotting purposes
-        #     logger.add_scalar("charts/learning_rate",
-        #                       optimizer.param_groups[0]["lr"], global_step)
-        #     logger.add_scalar("losses/value_loss", v_loss.item(), global_step)
-        #     logger.add_scalar("losses/policy_loss",
-        #                       pg_loss.item(), global_step)
-        #     logger.add_scalar("losses/entropy",
-        #                       entropy_loss.item(), global_step)
-        #     logger.add_scalar("losses/old_approx_kl",
-        #                       old_approx_kl.item(), global_step)
-        #     logger.add_scalar("losses/approx_kl",
-        #                       approx_kl.item(), global_step)
-        #     logger.add_scalar("losses/clipfrac",
-        #                       np.mean(clipfracs), global_step)
-        #     logger.add_scalar("losses/explained_variance",
-        #                       explained_var, global_step)
-        # print("SPS:", int(global_step / (time.time() - start_time)))
+        if logger:
+            # TRY NOT TO MODIFY: record rewards for plotting purposes
+            logger.add_scalar("charts/learning_rate",
+                              optimizer.param_groups[0]["lr"], global_step)
+            logger.add_scalar("losses/value_loss", v_loss.item(), global_step)
+            logger.add_scalar("losses/policy_loss",
+                              pg_loss.item(), global_step)
+            logger.add_scalar("losses/entropy",
+                              entropy_loss.item(), global_step)
+            logger.add_scalar("losses/old_approx_kl",
+                              old_approx_kl.item(), global_step)
+            logger.add_scalar("losses/approx_kl",
+                              approx_kl.item(), global_step)
+            logger.add_scalar("losses/clipfrac",
+                              np.mean(clipfracs), global_step)
+            logger.add_scalar("losses/explained_variance",
+                              explained_var, global_step)
+            # print("SPS:", int(global_step / (time.time() - start_time)))
 
         return steps
 
@@ -260,7 +263,7 @@ class PPO:
 
         # num_updates = rparams.total_timesteps // rparams.batch_size
 
-        agent.memory.obs[0] = torch.Tensor(envs.reset()).to(device)
+        agent.memory.observations[0] = envs.reset()
         # agent.memory.dones[0] = torch.zeros(envs.num_envs).to(device)
         for update in range(1, rparams.num_updates + 1):
             steps = PPO.play(
@@ -288,8 +291,9 @@ class PPO:
                 log_file_format=log_file_format
             )
 
-            logger.add_scalar("charts/SPS", int(global_step /
-                              (time.time() - start_time)), global_step)
+            if logger:
+                logger.add_scalar("charts/SPS", int(global_step /
+                                (time.time() - start_time)), global_step)
 
             if agent.memory.full:
                 agent.memory.reset()

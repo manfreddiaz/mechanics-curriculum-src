@@ -4,7 +4,7 @@ import gym
 from learned.core import MetaTrainingEnvironment
 
 
-class MetaActionIdentificationWrapper(gym.Wrapper):
+class MetaActionObservationWrapper(gym.Wrapper):
 
     def __init__(
         self,
@@ -31,3 +31,19 @@ class MetaActionIdentificationWrapper(gym.Wrapper):
         obs, reward, done, info = super().step(action)
 
         return action[self._meta_player_id], reward, done, info
+
+
+class FixMetaEvaluatorAction(gym.ActionWrapper):
+
+    def __init__(
+        self, 
+        env: gym.Env,
+        evaluator_action: int
+    ):
+        super().__init__(env)
+        assert evaluator_action < self.action_space.n
+        self._evaluator_action = evaluator_action
+
+    def action(self, action):
+        return [action, self._evaluator_action]
+        # return super().action(action)

@@ -1,4 +1,6 @@
-_target_: factories.meta.meta_game_with_index.make_task
+_target_: factories.meta.meta_trainer_with_index.make_task
+
 meta_player_id: 0 # trainer
+evaluator_action: 1  # always_defect 
 episode_time_limit: 50
 num_envs: 1

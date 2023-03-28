@@ -36,6 +36,16 @@ def make_alg(
             log_file_format=log_file_format,
         )
 
-        return play_fn, optimize_fn
+        learn_fn = functools.partial(
+            PPO.learn,
+            hparams=hparams,
+            rparams=rparams,
+            device=device,
+            logger=logger,
+            log_every=log_every,
+            log_file_format=log_file_format,
+        )
+
+        return play_fn, optimize_fn, learn_fn
 
     return make_ppo

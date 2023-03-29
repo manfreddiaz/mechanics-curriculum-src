@@ -3,8 +3,8 @@ defaults:
     - main/alg: ppo
     - main/agent: ac_mlp
     - main/task: sipd
-    - meta/alg: ppo
-    - meta/agent: ac_mlp
+    - meta/alg: dqn
+    - meta/agent: q_mlp
     - meta/task: task_with_index
 
 run:

@@ -58,6 +58,41 @@ class DQN:
     @staticmethod
     def play(
         agent: OffPolicyAgent,
+        obs: np.array,
+        global_step: int,
+        hparams: HParamsDQN,
+        rparams: RParamsDQN,
+        device: torch.device
+    ):
+        policy = agent.policy
+        memory = agent.memory
+
+        epsilon = linear_schedule(
+            hparams.start_e, hparams.end_e,
+            hparams.exploration_fraction * rparams.total_timesteps,
+            global_step
+        )
+        if random.random() < epsilon:
+            actions = np.array([
+                np.random.choice(memory.action_space.n) for _ in range(len(obs))
+            ])
+        else:
+            q_values = policy.q_network(torch.Tensor(obs).to(device))
+            actions = torch.argmax(q_values, dim=1).cpu().numpy()
+
+        def memory_fn(obs, rewards, next_obs, dones, infos):
+            # handle `terminal_observation`
+            real_next_obs = next_obs.copy()
+            for idx, d in enumerate(dones):
+                if d:
+                    real_next_obs[idx] = infos[idx]["terminal_observation"]
+            memory.add(obs, real_next_obs, actions, rewards, dones, infos)
+
+        return actions, memory_fn
+
+    @staticmethod
+    def repeat_play(
+        agent: OffPolicyAgent,
         obs: torch.Tensor,
         next_done: torch.Tensor,
         envs: gym.vector.SyncVectorEnv,
@@ -69,32 +104,15 @@ class DQN:
         log_file_format,
         device: torch.device
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        policy = agent.policy
-        memory = agent.memory
 
-        epsilon = linear_schedule(
-            hparams.start_e, hparams.end_e,
-            hparams.exploration_fraction * rparams.total_timesteps,
-            global_step
-        )
-        if random.random() < epsilon:
-            actions = np.array([
-                envs.single_action_space.sample() for _ in range(envs.num_envs)
-            ])
-        else:
-            q_values = policy.q_network(torch.Tensor(obs).to(device))
-            actions = torch.argmax(q_values, dim=1).cpu().numpy()
+        actions, memory_fn = DQN.play(
+            agent, obs, global_step, envs,
+            hparams, rparams, device)
 
         # TRY NOT TO MODIFY: execute the game and log data.
         next_obs, rewards, dones, infos = envs.step(actions)
 
-
-        # handle `terminal_observation`
-        real_next_obs = next_obs.copy()
-        for idx, d in enumerate(dones):
-            if d:
-                real_next_obs[idx] = infos[idx]["terminal_observation"]
-        memory.add(obs, real_next_obs, actions, rewards, dones, infos)
+        memory_fn(obs, rewards, next_obs, dones, infos)
 
         return 1 * envs.num_envs
 
@@ -106,6 +124,7 @@ class DQN:
         hparams: HParamsDQN,
         rparams: RParamsDQN,
         logger,
+        device: torch.device,
         log_every: int,
         log_file_format: str,
     ):
@@ -128,9 +147,10 @@ class DQN:
                 loss = F.mse_loss(td_target, old_val)
 
                 if global_step % 100 == 0:
-                    logger.add_scalar("losses/td_loss", loss, global_step)
-                    logger.add_scalar("losses/q_values",
-                                      old_val.mean().item(), global_step)
+                    if logger:
+                        logger.add_scalar("losses/td_loss", loss, global_step)
+                        logger.add_scalar("losses/q_values",
+                                          old_val.mean().item(), global_step)
                 # optimize the model
                 optimizer.zero_grad()
                 loss.backward()
@@ -166,7 +186,7 @@ class DQN:
         obs = envs.reset()
         for global_step in range(rparams.total_timesteps):
             # ALGO LOGIC: put action logic here
-            obs, _ = DQN.play(
+            obs, _ = DQN.repeat_play(
                 agent=agent,
                 obs=obs,
                 next_done=None,

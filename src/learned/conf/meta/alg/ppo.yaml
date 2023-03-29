@@ -10,7 +10,7 @@ rparams:
 
 hparams:
   learning_rate: 0.0025
-  num_steps: 128
+  num_steps: 32
   anneal_lr: True
   gamma: 0.99
   gae_lambda: 0.95

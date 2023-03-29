@@ -1,106 +1,75 @@
 # adapted from CleanRL
 import time
 from dataclasses import dataclass
-from typing import Protocol, Tuple
+from typing import List, Protocol, Tuple
 
 import gym
 import numpy as np
 import torch
 import torch.nn as nn
 
-from stable_baselines3.common.buffers import RolloutBuffer
-
-from ccgm.common.algs.core import Agent, MemoryUpdateFn
+from ccgm.common.algs.core import MemoryUpdateFn
 
 
-class ActorCritic(Protocol):
-    actor: nn.Module
-    critic: nn.Module
+from .ppo import HParamsPPO, OnPolicyAgent, RParamsPPO
 
 
-@dataclass
-class OnPolicyAgent(
-    Agent[
-        ActorCritic, RolloutBuffer, torch.optim.Optimizer
-    ]
-):
-    pass
-
-
-@dataclass
-class HParamsPPO:
-    num_steps: int
-    gamma: float
-    gae_lambda: float
-    learning_rate: float
-    update_epochs: int
-    norm_adv: bool
-    clip_vloss: float
-    clip_coef: float
-    ent_coef: float
-    vf_coef: float
-    max_grad_norm: float
-    target_kl: float
-
-
-@dataclass
-class RParamsPPO:
-    total_timesteps: int
-    batch_size: int
-    minibatch_size: int
-    num_updates: int
-
-
-class PPO:
+class MultiagentPPO:
 
     @staticmethod
     def play(
-        agent: OnPolicyAgent,
+        agents: List[OnPolicyAgent],
         obs: np.array,
-        global_step: int,  # noqa for compatibility with DQN
+        hparams: List[HParamsPPO],
         device: torch.device
     ) -> Tuple[
-        np.array,
-        MemoryUpdateFn[torch.Tensor, float]
+        List[np.array],
+        List[MemoryUpdateFn[torch.Tensor, float]]
     ]:
 
-        policy = agent.policy
-        with torch.no_grad():
-            action, logprob, _, value = policy.get_action_and_value(
-                torch.tensor(obs).to(device)
-            )
+        actions = []
+        memory_fns = []
+        for agent in agents:
+            policy = agent.policy
+            with torch.no_grad():
+                action, logprob, _, value = policy.get_action_and_value(
+                    torch.tensor(obs).to(device)
+                )
 
-        action = action.cpu().numpy()
+            action = action.cpu().numpy()
 
-        def memory_fn(obs, reward, next_obs, done, info):
-            rb = agent.memory
-            rb.add(
-                obs=obs,
-                action=action,
-                reward=reward,
-                episode_start=done,
-                value=value.flatten(),
-                log_prob=logprob
-            )
+            def memory_fn(obs, reward, next_obs, done):
+                rb = agent.memory
+                rb.add(
+                    obs=obs,
+                    action=action,
+                    reward=reward,
+                    episode_start=done,
+                    value=value.flatten(),
+                    log_prob=logprob
+                )
+            actions += [action]
+            memory_fns += [memory_fn]
 
-        return action, memory_fn
+        return actions, memory_fns
 
     @staticmethod
     def repeat_play(
-        agent: OnPolicyAgent,
+        agents: List[OnPolicyAgent],
         envs: gym.vector.VectorEnv,
-        hparams: HParamsPPO,
-        rparams: RParamsPPO,
+        hparams: List[HParamsPPO],
+        rparams: List[RParamsPPO],
         logger,
         global_step: int,
         log_every: int,
         log_file_format: int,
         device: torch.device
     ):
-        policy = agent.policy
-        rb = agent.memory
+        next_obs = []
+        for agent in agents:
+            rb = agent.memory
+            next_obs += [rb.observations[rb.pos % rb.buffer_size]]
 
-        next_obs = rb.observations[rb.pos % rb.buffer_size]
         # interact on policy
         steps = 0
         for step in range(0, hparams.num_steps):
@@ -108,13 +77,14 @@ class PPO:
             steps += 1 * envs.num_envs
 
             obs = next_obs
-            action, memory_fn = PPO.play(agent, next_obs, hparams, device)
+            action, memory_fns = MultiagentPPO.play(agent, next_obs, device)
 
             next_obs, reward, done, info = envs.step(action)
 
             # standardize way to update the replay buffer
             # for both on and off policy algorithms
-            memory_fn(obs, reward, next_obs, done, info)
+            for idx, memory_fn in enumerate(memory_fns):
+                memory_fn(obs, reward[idx], next_obs, done)
 
             if logger:
                 for item in info:
@@ -149,28 +119,25 @@ class PPO:
     def optimize(
         agent: OnPolicyAgent,
         envs: gym.vector.VectorEnv,
-        global_step: int,
         hparams: HParamsPPO,
         rparams: RParamsPPO,
         logger,
+        global_step: int,
         log_every: int,
         log_file_format: str,
         device: torch.device
     ):
-
-        policy = agent.policy
-        optimizer = agent.optimizer
-        rb = agent.memory
-
-        if not rb.full:
-            return
 
         if hparams.anneal_lr:
             # Annealing the rate if instructed to do so.
             update = global_step / hparams.num_steps
             frac = 1.0 - (update - 1.0) / rparams.num_updates
             lrnow = frac * hparams.learning_rate
-            optimizer.param_groups[0]["lr"] = lrnow
+            agent.optimizer.param_groups[0]["lr"] = lrnow
+
+        policy = agent.policy
+        optimizer = agent.optimizer
+        rb = agent.memory
 
         # flatten the batch
         b_obs = torch.tensor(rb.observations.reshape(
@@ -252,9 +219,6 @@ class PPO:
             if hparams.target_kl is not None:
                 if approx_kl > hparams.target_kl:
                     break
-
-        # NOTE: Clear the buffer after we use it.
-        rb.reset()
 
         y_pred, y_true = b_values.cpu().numpy(), b_returns.cpu().numpy()
         var_y = np.var(y_true)

@@ -5,6 +5,9 @@ import gym  # noqa
 import torch
 from stable_baselines3.common.buffers import BaseBuffer
 
+ObsType = TypeVar("ObsType")
+ActionType = TypeVar("ActionType")
+RewardType = TypeVar("RewardType")
 PolicyType = TypeVar("PolicyType")
 ReplayBufferType = TypeVar("ReplayBufferType", bound=BaseBuffer)
 OptimizerType = TypeVar("OptimizerType", bound=torch.optim.Optimizer)
@@ -27,4 +30,9 @@ AlgorithmPlayFn = Callable[
 AlgorithmOptimizeFn = Callable[
     [Agent, gym.vector.VectorEnv, int],
     bool
+]
+
+MemoryUpdateFn = Callable[
+    [ObsType, RewardType, ObsType, bool],
+    None
 ]

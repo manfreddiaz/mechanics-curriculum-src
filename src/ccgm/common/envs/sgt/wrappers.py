@@ -1,3 +1,4 @@
+from typing import Iterable
 import numpy as np
 import gym
 
@@ -14,10 +15,22 @@ class OneHotObservationWrapper(gym.ObservationWrapper):
             low=-np.inf, high=np.inf, shape=(env.observation_space.n,))
 
     def observation(self, observation):
-        obs = np.zeros(self.observation_space.shape, dtype=np.float32)
-        if observation is not None:
-            assert observation < self.env.observation_space.n
+        if observation is None:
+            return np.zeros(self.observation_space.shape, dtype=np.float32)
+
+        if isinstance(observation, Iterable):
+            obs = []
+            for sobs in observation:
+                one_hot = np.zeros(
+                    self.observation_space.shape, dtype=np.float32)
+                if sobs is not None:
+                    assert observation < self.env.observation_space.n
+                    one_hot[sobs] = 1.0
+                obs.append(one_hot)
+        else:
+            obs = np.zeros(self.observation_space.shape, dtype=np.float32)
             obs[observation] = 1.0
+
         return obs
 
 

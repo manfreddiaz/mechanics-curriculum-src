@@ -19,6 +19,12 @@ def make_alg(
         play_fn = functools.partial(
             PPO.play,
             hparams=hparams,
+            device=device,
+        )
+
+        optimize_fn = functools.partial(
+            PPO.optimize,
+            hparams=hparams,
             rparams=rparams,
             device=device,
             logger=logger,
@@ -26,8 +32,8 @@ def make_alg(
             log_file_format=log_file_format,
         )
 
-        optimize_fn = functools.partial(
-            PPO.optimize,
+        repeat_play_fn = functools.partial(
+            PPO.repeat_play,
             hparams=hparams,
             rparams=rparams,
             device=device,
@@ -46,6 +52,6 @@ def make_alg(
             log_file_format=log_file_format,
         )
 
-        return play_fn, optimize_fn, learn_fn
+        return play_fn, optimize_fn, repeat_play_fn, learn_fn
 
     return make_ppo

@@ -27,7 +27,7 @@ class MetaTrainingEnvironment(gym.Env[Agent, int]):
         # state
         self._learning_step: int = None
         self._agent: Agent = None
-        self._alg_play_fn, self._alg_optim_fn, _ = alg_fn()
+        _, self._alg_optim_fn, self._alg_play_fn, _ = alg_fn()
         # environments
         self._train_envs = env_fn()
         self._need_reset = [True] * len(self._train_envs)
@@ -48,7 +48,7 @@ class MetaTrainingEnvironment(gym.Env[Agent, int]):
         seed: Optional[int] = None,
         return_info: bool = False,
         options: Optional[dict] = None
-    ) -> Agent:
+    ) -> Tuple[Agent, Agent]:
 
         # TODO: there is a better approach to this
         # we can just reset the agent parameters
@@ -62,9 +62,10 @@ class MetaTrainingEnvironment(gym.Env[Agent, int]):
             seed=seed, return_info=return_info,
             options=options
         )
-        return self._agent
+        return [self._agent, self._agent]
 
-    def step(self, action: Tuple[int]) -> Tuple[Agent, float, bool, dict]:
+    def step(self, action: Tuple[int]) -> Tuple[
+            Tuple[Agent, Agent], Tuple[float, float], bool, dict]:
 
         info = dict()
 

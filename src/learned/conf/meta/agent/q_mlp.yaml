@@ -1,2 +1,2 @@
-_target_: factories.main.agent.q_mlp.make_agent
+_target_: factories.agent.q_mlp.make_agent
 id: q_mlp

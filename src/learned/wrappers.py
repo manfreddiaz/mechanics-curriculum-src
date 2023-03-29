@@ -4,18 +4,15 @@ import gym
 from learned.core import MetaTrainingEnvironment
 
 
-class MetaActionObservationWrapper(gym.Wrapper):
+class JointActionObservationWrapper(gym.Wrapper):
 
     def __init__(
         self,
         env: MetaTrainingEnvironment,
-        meta_player_id: int
     ):
         super().__init__(env)
-        assert self.env.action_space.n > meta_player_id
-        self._meta_player_id = meta_player_id
 
-        self.observation_space = gym.spaces.Discrete(self.action_space.n)
+        self.observation_space = gym.spaces.Discrete(self.action_space.n ** 2)
 
     def reset(self, **kwargs):
         """Reset semantics: None indicates that no training has been made.
@@ -28,9 +25,10 @@ class MetaActionObservationWrapper(gym.Wrapper):
         return None
 
     def step(self, action) -> Tuple[int, float, bool, dict]:
-        obs, reward, done, info = super().step(action)
-
-        return action[self._meta_player_id], reward, done, info
+        _, reward, done, info = super().step(action)
+        trainer_action, evaluator_action = action
+        observation_encoding = trainer_action * self.action_space.n + evaluator_action 
+        return observation_encoding, reward, done, info
 
 
 class FixMetaEvaluatorAction(gym.ActionWrapper):

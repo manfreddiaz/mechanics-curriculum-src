@@ -7,7 +7,7 @@ from ccgm.common.envs.utils import AutoResetWrapper
 
 from learned.utils import make_meta_env
 from learned.wrappers import (
-    FixMetaEvaluatorAction, MetaActionObservationWrapper
+    FixMetaEvaluatorAction, JointActionObservationWrapper
 )
 
 
@@ -21,14 +21,13 @@ def make_task(
         task_config: DictConfig
     ):
         env = make_meta_env(task_config)
-        env = MetaActionObservationWrapper(
+        env = JointActionObservationWrapper(
             env=env,
-            meta_player_id=meta_player_id
         )
-        env = FixMetaEvaluatorAction(
-            env=env,
-            evaluator_action=evaluator_action
-        )
+        # env = FixMetaEvaluatorAction(
+        #     env=env,
+        #     evaluator_action=evaluator_action
+        # )
         env = OneHotObservationWrapper(env)
         env = TimeLimit(
             env,

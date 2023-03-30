@@ -4,7 +4,7 @@ from omegaconf import DictConfig
 
 import torch
 from ccgm.common.algs.networks.ac_network import MinatarActorCritic
-from ccgm.common.algs.ppo import OnPolicyAgent, OnPolicyReplayBuffer
+from ccgm.common.algs.ppo import OnPolicyAgent, RolloutBuffer
 
 
 def make_agent(
@@ -18,25 +18,14 @@ def make_agent(
         policy = MinatarActorCritic(envs).to(device)
         agent = OnPolicyAgent(
             policy=policy,
-            memory=OnPolicyReplayBuffer(
-                obs=torch.zeros(
-                    (hparams.num_steps, envs.num_envs) +
-                    envs.single_observation_space.shape).to(device),
-                actions=torch.zeros(
-                    (hparams.num_steps, envs.num_envs) +
-                    envs.single_action_space.shape).to(device),
-                logprobs=torch.zeros(
-                    (hparams.num_steps, envs.num_envs)).to(device),
-                rewards=torch.zeros(
-                    (hparams.num_steps, envs.num_envs)).to(device),
-                dones=torch.zeros(
-                    (hparams.num_steps, envs.num_envs)).to(device),
-                values=torch.zeros(
-                    (hparams.num_steps, envs.num_envs)).to(device),
-                advantages=torch.zeros(
-                    (hparams.num_steps, envs.num_envs)).to(device),
-                returns=torch.zeros(
-                    (hparams.num_steps, envs.num_envs)).to(device)
+            memory=RolloutBuffer(
+                buffer_size=hparams.num_steps,
+                action_space=envs.single_action_space,
+                observation_space=envs.single_observation_space,
+                gae_lambda=hparams.gae_lambda,
+                gamma=hparams.gamma,
+                device=device,
+                n_envs=envs.num_envs
             ),
             optimizer=torch.optim.Adam(
                 policy.parameters(), lr=hparams.learning_rate, eps=1e-5)

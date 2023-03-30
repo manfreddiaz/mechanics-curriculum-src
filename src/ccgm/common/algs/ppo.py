@@ -143,7 +143,12 @@ class PPO:
             done
         )
 
-        return steps
+        optim_steps = PPO.optimize(
+            agent, envs, global_step + step, hparams, rparams,
+            logger, log_every, log_file_format, device
+        )
+
+        return steps, optim_steps
 
     @staticmethod
     def optimize(

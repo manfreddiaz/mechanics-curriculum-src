@@ -1,16 +1,13 @@
 import functools
-from typing import List, Union
+from typing import Union
+
 import gym
-from ccgm.common.coalitions import Coalition, OrderedCoalition
-from ccgm.common.envs.rl.gym.miniatar.utils import MinAtarStandardObservation
-from ccgm.common.games import CooperativeMetaGame
-from ccgm.utils import CoalitionalGame
 
 from ccgm.common.envs.rl.gym.miniatar import (
-    MINATAR_STRATEGIES_v0,
-    MINATAR_STRATEGIES_v1,
-    MINATAR_STRATEGIES_all
+    MINATAR_STRATEGIES_all, MINATAR_STRATEGIES_v0,
+    MINATAR_STRATEGIES_v1
 )
+from ccgm.common.envs.rl.gym.miniatar.utils import MinAtarStandardObservation
 
 
 def make_minatar_env(env_id: str) -> gym.Env:
@@ -19,49 +16,16 @@ def make_minatar_env(env_id: str) -> gym.Env:
     return env
 
 
-def make_coalition(
-    team,
-    order,
-    total_time_limit: int,
-    probs: List = None,
+def make_vectorized_env(
+    env_id,
+    num_envs: int
 ):
-
-    if order == 'random':
-        return Coalition(
-            players=[
-                make_minatar_env(player) for player in team.players
-            ],
-            probs=probs
-        )
-    elif order == 'ordered':
-        return OrderedCoalition(
-            players=[
-                make_minatar_env(player) for player in team.players
-            ],
-            probs=probs,
-            time_limit=total_time_limit
-        )
-    else:
-        raise NotImplementedError()
-
-
-def make_cooperative_env(
-    team: List,
-    episode_time_limit: int,
-    order: str,
-    probs: List = None,
-) -> 'CooperativeMetaGame':
-
-    env = CooperativeMetaGame(
-        meta_strategy=make_coalition(
-            team=team,
-            order=order,
-            probs=probs,
-            total_time_limit=episode_time_limit
-        )
+    make_sync_env = functools.partial(
+        make_minatar_env,
+        env_id=env_id,
     )
-
-    return env
+    return gym.vector.SyncVectorEnv(
+        [make_sync_env for _ in range(num_envs)])
 
 
 def make_task(
@@ -80,20 +44,17 @@ def make_task(
     else:
         raise NotImplementedError()
 
-    game_spec = CoalitionalGame.make(
-        players=players,
-        ordered=True if order == 'ordered' else False
-    )
+    # game_spec = CoalitionalGame.make(
+    #     players=players,
+    #     ordered=True if order == 'ordered' else False
+    # )
 
-    def make_game(team, probs=None):
-        make_env = functools.partial(
-            make_cooperative_env,
-            team=team,
-            order=order,
-            probs=probs,
-            episode_time_limit=episode_limit,
-        )
+    def make_env_fn():
+        return [
+            make_vectorized_env(
+                env_id=env_id,
+                num_envs=num_envs
+            ) for env_id in players
+        ]
 
-        return make_env
-
-    return game_spec, make_game
+    return None, make_env_fn

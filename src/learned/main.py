@@ -50,23 +50,23 @@ def main(
     ])
 
     trainer, trainer_play_fn, trainer_optim_fn = make_meta_agent(cfg, envs)
-    evaluer, evaluer_play_fn, evaluer_optim_fn = make_meta_agent(cfg, envs)
+    # evaluer, evaluer_play_fn, evaluer_optim_fn = make_meta_agent(cfg, envs)
 
     obs = envs.reset()
-    for i in range(10000):
+    for i in range(39000):
         trainer_action, t_memory_fn = trainer_play_fn(trainer, obs, i)
-        eval_action, e_memory_fn = evaluer_play_fn(evaluer, obs, i)
+        # eval_action, e_memory_fn = evaluer_play_fn(evaluer, obs, i)
 
-        joint_action = np.hstack([[trainer_action], [eval_action]])
+        joint_action = np.hstack([[trainer_action], [np.array([1])]])
         next_obs, reward, done, info = envs.step(joint_action)
         t_memory_fn(obs, reward, next_obs, done, info)
-        e_memory_fn(obs, -reward, next_obs, done, info)
+        # e_memory_fn(obs, -reward, next_obs, done, info)
 
         trainer_optim_fn(trainer, envs, i)
-        evaluer_optim_fn(evaluer, envs, i)
+        # evaluer_optim_fn(evaluer, envs, i)
 
         print(
-            f"it:{i}, ta: {trainer_action}, ea: {eval_action}, rt: {reward}, re:{-reward}")
+            f"it:{i}, ta: {trainer_action}, ea: {1}, rt: {reward[0]:.1f}")
         if done:
             print('one done')
 

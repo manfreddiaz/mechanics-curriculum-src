@@ -27,7 +27,7 @@ class MetaTrainingEnvironment(gym.Env[Agent, int]):
         # state
         self._learning_step: int = None
         self._agent: Agent = None
-        _, self._alg_optim_fn, self._alg_play_fn, _ = alg_fn()
+        _, _, self._alg_play_fn, _ = alg_fn()
         # environments
         self._train_envs = env_fn()
         self._need_reset = [True] * len(self._train_envs)
@@ -82,19 +82,12 @@ class MetaTrainingEnvironment(gym.Env[Agent, int]):
             rb.observations[rb.pos] = self._train_envs[trainer_action].reset()  # noqa
             self._need_reset[trainer_action] = False
 
-        play_steps = self._alg_play_fn(
+        play_steps, optim_steps = self._alg_play_fn(
             self._agent,
             envs=self._train_envs[trainer_action],
             global_step=self._learning_step
         )
         self._learning_step += play_steps
-
-        optim_steps = self._alg_optim_fn(
-            self._agent,
-            envs=self._train_envs[trainer_action],
-            global_step=self._learning_step
-        )
-        # TODO: should include number of internal steps?
 
         reward, _ = self._eval_fn(
             self._agent,

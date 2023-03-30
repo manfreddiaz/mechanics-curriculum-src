@@ -2,12 +2,12 @@
 from gym.wrappers import TimeLimit
 
 from omegaconf import DictConfig
-from ccgm.common.envs.sgt.wrappers import OneHotObservationWrapper
 from ccgm.common.envs.utils import AutoResetWrapper
 
 from learned.utils import make_meta_env
 from learned.wrappers import (
-    FixMetaEvaluatorAction, JointActionObservationWrapper
+    JointActionObservationWrapper, RewardLearningProgressionWrapper,
+    TimeFeatureWrapper
 )
 
 
@@ -24,18 +24,21 @@ def make_task(
         env = JointActionObservationWrapper(
             env=env,
         )
-        # env = FixMetaEvaluatorAction(
-        #     env=env,
-        #     evaluator_action=evaluator_action
+        # env = RewardLearningProgressionWrapper(
+        #     env=env
         # )
-        env = OneHotObservationWrapper(env)
-        env = TimeLimit(
-            env,
-            episode_time_limit
-        )
-        env = AutoResetWrapper(
-            env=env
-        )
+
+        if episode_time_limit > 0:
+            env = TimeLimit(
+                env,
+                episode_time_limit
+            )
+            env = TimeFeatureWrapper(
+                env
+            )
+            env = AutoResetWrapper(
+                env=env
+            )
         return env
 
     return make_meta_task

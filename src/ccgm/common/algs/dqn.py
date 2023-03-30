@@ -20,6 +20,10 @@ class QPolicyWithTarget:
     q_network: nn.Module
     target_network: nn.Module
 
+    def predict(self, obs: torch.Tensor):
+        q_values = self.q_network(obs)
+        return torch.argmax(q_values, dim=1)
+
 
 @dataclass
 class OffPolicyAgent(
@@ -40,6 +44,7 @@ class HParamsDQN:
     learning_starts: int
     train_frequency: int
     tau: float
+    num_steps: int = 1
 
 
 @dataclass
@@ -93,8 +98,6 @@ class DQN:
     @staticmethod
     def repeat_play(
         agent: OffPolicyAgent,
-        obs: torch.Tensor,
-        next_done: torch.Tensor,
         envs: gym.vector.SyncVectorEnv,
         hparams: HParamsDQN,
         rparams: RParamsDQN,
@@ -105,16 +108,26 @@ class DQN:
         device: torch.device
     ) -> Tuple[torch.Tensor, torch.Tensor]:
 
-        actions, memory_fn = DQN.play(
-            agent, obs, global_step, envs,
-            hparams, rparams, device)
+        rb = agent.memory
 
-        # TRY NOT TO MODIFY: execute the game and log data.
-        next_obs, rewards, dones, infos = envs.step(actions)
+        obs = rb.observations[rb.pos % rb.buffer_size]
 
-        memory_fn(obs, rewards, next_obs, dones, infos)
+        for step in range(hparams.num_steps):
+            actions, memory_fn = DQN.play(
+                agent, obs, global_step + step, hparams, rparams, device)
 
-        return 1 * envs.num_envs
+            # TRY NOT TO MODIFY: execute the game and log data.
+            next_obs, rewards, dones, infos = envs.step(actions)
+
+            memory_fn(obs, rewards, next_obs, dones, infos)
+
+            DQN.optimize(
+                agent, envs, global_step + step, hparams, rparams, logger,
+                device, log_every, log_file_format
+            )
+            obs = next_obs
+
+        return hparams.num_steps * 1 * envs.num_envs, hparams.num_steps
 
     @staticmethod
     def optimize(
@@ -200,16 +213,16 @@ class DQN:
                 device=device
             )
 
-            DQN.optimize(
-                agent=agent,
-                envs=envs,
-                hparams=hparams,
-                rparams=rparams,
-                logger=logger,
-                global_step=global_step,
-                log_every=log_every,
-                log_file_format=log_file_format
-            )
+            # DQN.optimize(
+            #     agent=agent,
+            #     envs=envs,
+            #     hparams=hparams,
+            #     rparams=rparams,
+            #     logger=logger,
+            #     global_step=global_step,
+            #     log_every=log_every,
+            #     log_file_format=log_file_format
+            # )
 
             logger.add_scalar("charts/SPS", int(global_step /
                               (time.time() - start_time)), global_step)

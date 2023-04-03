@@ -1,8 +1,8 @@
 defaults:
     - _self_
     - main/alg: ppo
-    - main/agent: ac_mlp
-    - main/task: sipd
+    - main/agent: ac_minatar
+    - main/task: minatar
     - meta/alg: dqn
     - meta/agent: q_mlp
     - meta/task: task_with_index

@@ -9,6 +9,7 @@ hparams:
   learning_rate: 0.0025
   buffer_size: 10000
   gamma: 0.99
+  num_steps: 1
   tau: 1.0
   target_network_frequency: 500
   start_e: 1

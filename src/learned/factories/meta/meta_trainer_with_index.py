@@ -24,9 +24,9 @@ def make_task(
         env = JointActionObservationWrapper(
             env=env,
         )
-        # env = RewardLearningProgressionWrapper(
-        #     env=env
-        # )
+        env = RewardLearningProgressionWrapper(
+            env=env
+        )
 
         if episode_time_limit > 0:
             env = TimeLimit(

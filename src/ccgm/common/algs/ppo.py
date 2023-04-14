@@ -24,7 +24,14 @@ class OnPolicyAgent(
         ActorCritic, RolloutBuffer, torch.optim.Optimizer
     ]
 ):
-    pass
+    def copy(self, other: 'OnPolicyAgent'):
+        if not isinstance(other, type(self)):
+            print(f'copy attempt mistmatch -> from {type(other)} to {type(self)}')
+            return
+        self.policy.actor.load_state_dict(other.policy.actor.state_dict())
+        self.policy.critic.load_state_dict(other.policy.critic.state_dict())
+        self.optimizer.load_state_dict(other.optimizer.state_dict())
+        # TODO: replay buffer?
 
 
 @dataclass

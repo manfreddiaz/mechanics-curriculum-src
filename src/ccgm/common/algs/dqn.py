@@ -31,7 +31,19 @@ class OffPolicyAgent(
         QPolicyWithTarget, ReplayBuffer, torch.optim.Optimizer
     ]
 ):
-    pass
+    def copy(self, other: 'OffPolicyAgent'):
+        self.policy.q_network.load_state_dict(
+            other.policy.q_network.state_dict()
+        )
+        self.policy.target_network.load_state_dict(
+            other.policy.target_network.state_dict()
+        )
+        self.optimizer.load_state_dict(
+            other.optimizer.state_dict()
+        )
+        # self.memory.reset()
+        # TODO: Should memory be also copied? it should be
+        # self.memory.
 
 
 @dataclass

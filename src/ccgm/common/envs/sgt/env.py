@@ -26,11 +26,8 @@ class SequentialMatrixGameEnvironment(gym.Env):
         super().__init__()
 
         self.np_random = np.random.RandomState(0)
-        self.with_memory = with_memory
         self.acc_rewards = 0.0
 
-        if self.with_memory:
-            self.memory = None
         self._last_obs = None
 
         if type(nature_strategy) == str:
@@ -64,28 +61,22 @@ class SequentialMatrixGameEnvironment(gym.Env):
         return
 
     def reset(self, seed=None, options=None):
-        if self.with_memory and self.memory is not None:
-            self._last_obs = self.nature_strategy(*self.memory)
-        else:
-            self._last_obs = self.nature_strategy.first()
+        self._last_obs = self.nature_strategy.first()
         self.acc_rewards = 0.0
         return self._last_obs
 
     def step(self, action):
-        if self.with_memory:
-            self.memory = (self._last_obs, action)
         next_obs = self.nature_strategy(self._last_obs, action)
         nature_reward, agent_reward = self.principal_strategy(
             self._last_obs, action)
         self.acc_rewards += nature_reward
 
         self._last_obs = next_obs
-        done = False
         info = dict({
             'nature_reward': nature_reward,
             'nature_acc_reward': self.acc_rewards
         })
-        return next_obs, agent_reward, done, info
+        return next_obs, agent_reward, False, info
 
 
 def make_env(

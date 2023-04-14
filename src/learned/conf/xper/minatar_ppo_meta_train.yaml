@@ -7,4 +7,4 @@ defaults:
 
 meta:
   task:
-    episode_time_limit: 1000
+    episode_time_limit: 100

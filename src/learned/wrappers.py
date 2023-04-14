@@ -34,15 +34,27 @@ class JointActionObservationWrapper(gym.Wrapper):
         # NOTE: we store the original info (most likely the agent)
         info['o_obs'] = obs
 
-        obs = []
-        for action in actions:
-            one_hot = np.zeros(
-                self.action_space.n, dtype=np.float32)
-            one_hot[action] = 1.0
-            obs.append(one_hot)
-        obs = np.concatenate(obs, axis=-1)
+        # obs = []
+        # for action in actions:
+        #     one_hot = np.zeros(
+        #         self.action_space.n, dtype=np.float32)
+        #     one_hot[action] = 1.0
+        #     obs.append(one_hot)
+        # obs = np.concatenate(obs, axis=-1)
+        obs = np.zeros(self.observation_space.shape)
 
         return obs, reward, done, info
+
+
+class FixedEvaluatorWrapper(gym.Wrapper):
+    def __init__(self, env: gym.Env, eval_action: int = 0):
+        super().__init__(env)
+        self._eval_action = eval_action
+
+    def step(self, action):
+        action = [action, self._eval_action]
+        return super().step(action)
+
 
 
 class RewardLearningProgressionWrapper(gym.Wrapper):

@@ -7,8 +7,9 @@ from omegaconf import DictConfig, OmegaConf
 import torch
 from ccgm.common.algs.core import Agent
 
-from learned.core import MetaTrainingEnvironment
-
+from learned.core import (
+    MetaTrainingEnvironment, CounterfactualMetaTrainingEnvironment
+)
 
 def _hydra_load_node(x: str):
     cfg = hydra.compose(f"{x}.yaml")
@@ -63,29 +64,52 @@ def eval_agent(
     return np.mean(episodes_rewards), np.std(episodes_rewards)
 
 
-def make_meta_env(cfg: DictConfig) -> gym.Env:
+def make_meta_env(cfg: DictConfig, counter_factual: bool = False) -> gym.Env:
     make_agent = hydra.utils.instantiate(cfg.main.agent)
     _, make_env = hydra.utils.instantiate(cfg.main.task)
     make_alg = hydra.utils.instantiate(cfg.main.alg)
-    env = MetaTrainingEnvironment(
-        agent_fn=functools.partial(
-            make_agent,
-            hparams=cfg.main.alg.hparams,
-            device=torch.device(cfg.torch.device)
-        ),
-        env_fn=make_env,
-        alg_fn=functools.partial(
-            make_alg,
-            logger=None,  # TODO: at some point logging logic has to go
-            device=torch.device(cfg.torch.device),
-            log_every=cfg.run.log_every,
-            log_file_format=None
-        ),
-        eval_fn=functools.partial(
-            eval_agent,
-            episodes=5,  # 5 episodes on each vectorized env
-            device=torch.device(cfg.torch.device)
+    if counter_factual:
+        env = CounterfactualMetaTrainingEnvironment(
+            agent_fn=functools.partial(
+                make_agent,
+                hparams=cfg.main.alg.hparams,
+                device=torch.device(cfg.torch.device)
+            ),
+            env_fn=make_env,
+            alg_fn=functools.partial(
+                make_alg,
+                logger=None,  # TODO: at some point logging logic has to go
+                device=torch.device(cfg.torch.device),
+                log_every=cfg.run.log_every,
+                log_file_format=None
+            ),
+            eval_fn=functools.partial(
+                eval_agent,
+                episodes=5,  # 5 episodes on each vectorized env
+                device=torch.device(cfg.torch.device)
+            )
         )
-    )
+    else:
+        env = MetaTrainingEnvironment(
+            agent_fn=functools.partial(
+                make_agent,
+                hparams=cfg.main.alg.hparams,
+                device=torch.device(cfg.torch.device)
+            ),
+            env_fn=make_env,
+            alg_fn=functools.partial(
+                make_alg,
+                logger=None,  # TODO: at some point logging logic has to go
+                device=torch.device(cfg.torch.device),
+                log_every=cfg.run.log_every,
+                log_file_format=None
+            ),
+            eval_fn=functools.partial(
+                eval_agent,
+                episodes=5,  # 5 episodes on each vectorized env
+                device=torch.device(cfg.torch.device)
+            )
+        )
 
     return env
+

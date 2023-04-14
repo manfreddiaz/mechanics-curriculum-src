@@ -28,7 +28,10 @@ class SparseRewardWrapper(gym.Wrapper):
 
     def __init__(self, env) -> None:
         super().__init__(env)
-        self.agent_acc_rwd = 0
+
+    def reset(self, **kwargs):
+        self.agent_acc_rwd = 0.0
+        return super().reset(**kwargs)
 
     def step(self, action):
         obs, reward, done, info = super().step(action)

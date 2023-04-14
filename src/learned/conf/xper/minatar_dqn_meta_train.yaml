@@ -1,0 +1,15 @@
+# @package _global_
+defaults:
+  - override /main/alg: dqn
+  - override /main/agent: q_minatar
+  - override /main/task: minatar
+
+
+main:
+  alg:
+    hparams:
+      num_steps: 128
+
+meta:
+  task:
+    episode_time_limit: 100

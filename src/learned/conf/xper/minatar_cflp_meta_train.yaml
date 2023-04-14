@@ -1,0 +1,19 @@
+# @package _global_
+defaults:
+  - override /main/alg: dqn
+  - override /main/agent: q_minatar
+  - override /main/task: minatar
+  - override /meta/task: cf_task_with_index
+
+description: "counterfactual with learning progression on minatar"
+
+main:
+  alg:
+    hparams:
+      num_steps: 128
+
+meta:
+  task:
+    id: "cf_lp"
+    learning_progression: true
+    episode_time_limit: 100

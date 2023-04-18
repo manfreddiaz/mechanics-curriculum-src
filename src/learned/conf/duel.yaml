@@ -1,0 +1,24 @@
+defaults:
+    - _self_
+    - main/alg: ppo
+    - main/agent: ac_mlp
+    - main/task: sipd
+    - meta/task: task_with_index
+
+run:
+    seed: 0
+    num_seeds: 5
+    outdir: logs/static/
+    log_every: -1
+    
+thread_pool:
+    size: 1
+    maxtasks: 4
+
+torch:
+    deterministic: true  
+    device: cuda
+
+log:
+    level: 0
+

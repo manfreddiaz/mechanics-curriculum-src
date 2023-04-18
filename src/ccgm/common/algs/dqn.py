@@ -32,6 +32,9 @@ class OffPolicyAgent(
     ]
 ):
     def copy(self, other: 'OffPolicyAgent'):
+        if not isinstance(other, type(self)):
+            print(f'copy attempt mistmatch -> from {type(other)} to {type(self)}')
+            return
         self.policy.q_network.load_state_dict(
             other.policy.q_network.state_dict()
         )
@@ -41,7 +44,14 @@ class OffPolicyAgent(
         self.optimizer.load_state_dict(
             other.optimizer.state_dict()
         )
-        # self.memory.reset()
+        self.memory.observations = np.array(other.memory.observations, copy=True)
+        self.memory.actions = np.array(other.memory.actions, copy=True)
+        self.memory.next_observations = np.array(other.memory.next_observations, copy=True)
+        self.memory.rewards = np.array(other.memory.rewards, copy=True)
+        self.memory.dones = np.array(other.memory.dones, copy=True)
+        self.memory.full = other.memory.full
+        self.memory.pos = other.memory.pos
+        self.memory.timeouts = np.array(other.memory.timeouts, copy=True)
         # TODO: Should memory be also copied? it should be
         # self.memory.
 

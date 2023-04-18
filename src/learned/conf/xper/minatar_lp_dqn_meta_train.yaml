@@ -1,0 +1,18 @@
+# @package _global_
+defaults:
+  - override /main/alg: dqn
+  - override /main/agent: q_minatar
+  - override /main/task: minatar
+  - override /meta/task: task_with_index
+
+description: "learning progression on minatar"
+
+main:
+  alg:
+    hparams:
+      num_steps: 128
+
+meta:
+  task:
+    id: "lp"
+    episode_time_limit: 50

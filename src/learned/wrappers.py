@@ -53,6 +53,7 @@ class FixedEvaluatorWrapper(gym.Wrapper):
 
     def step(self, action):
         action = [action, self._eval_action]
+        
         return super().step(action)
 
 
@@ -65,11 +66,15 @@ class RewardLearningProgressionWrapper(gym.Wrapper):
 
     def reset(self, **kwargs):
         self._reward = 0.0
+        self._agent_stats = 0.0
         return super().reset(**kwargs)
 
     def step(self, action):
         obs, reward, done, info = super().step(action)
-        info['o_reward'] = reward
+        self._agent_stats += reward
+        info['agent_stats'] = self._agent_stats
+        info['cf_agent_stats'] = 0.0
+
         next_reward = reward - self._reward
         self._reward = reward
 

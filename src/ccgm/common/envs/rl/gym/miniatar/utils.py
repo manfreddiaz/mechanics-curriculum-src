@@ -23,3 +23,23 @@ class MinAtarStandardObservation(gym.ObservationWrapper):
         obs = obs.transpose(2, 0, 1)
         return np.pad(
             obs, self._pad_pattern(obs.shape), 'constant', constant_values=0)
+
+
+class ClipRewardEnv(gym.RewardWrapper):
+    """
+    Clip the reward to {+1, 0, -1} by its sign.
+
+    :param env: Environment to wrap
+    """
+
+    def __init__(self, env: gym.Env) -> None:
+        super().__init__(env)
+
+    def reward(self, reward: float) -> float:
+        """
+        Bin reward to {+1, 0, -1} by its sign.
+
+        :param reward:
+        :return:
+        """
+        return np.sign(reward)

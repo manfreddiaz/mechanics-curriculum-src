@@ -6,13 +6,13 @@ from ccgm.common.envs.utils import AutoResetWrapper
 
 from learned.utils import make_meta_env
 from learned.wrappers import (
-    JointActionObservationWrapper, RewardLearningProgressionWrapper,
+    FixedEvaluatorWrapper, RewardLearningProgressionWrapper,
     TimeFeatureWrapper
 )
 
 
 def make_task(
-    meta_player_id: int,
+    id: str,
     evaluator_action: int,
     episode_time_limit: int,
     num_envs: int
@@ -21,9 +21,7 @@ def make_task(
         task_config: DictConfig
     ):
         env = make_meta_env(task_config)
-        env = JointActionObservationWrapper(
-            env=env,
-        )
+        env = FixedEvaluatorWrapper(env, eval_action=evaluator_action)
         env = RewardLearningProgressionWrapper(
             env=env
         )
@@ -33,9 +31,6 @@ def make_task(
                 env,
                 episode_time_limit
             )
-            # env = TimeFeatureWrapper(
-            #     env
-            # )
             env = AutoResetWrapper(
                 env=env
             )

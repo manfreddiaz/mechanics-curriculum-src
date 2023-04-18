@@ -1,9 +1,5 @@
-import argparse
 from distutils.util import strtobool
-import functools
-import os
 import random
-import time
 import numpy as np
 
 import gym
@@ -15,8 +11,6 @@ from stable_baselines3.common.monitor import Monitor
 from SMPyBandits.Policies import Exp3, Exp3S, UCB, Hedge
 
 from learned.utils import eval_agent, hydra_custom_resolvers
-
-from learned.wrappers import FixedEvaluatorWrapper
 
 
 hydra_custom_resolvers()
@@ -53,19 +47,18 @@ def main(
     epochs = 50000
     make_meta_task = hydra.utils.instantiate(cfg.meta.task)
     env = make_meta_task(cfg)
-    env = FixedEvaluatorWrapper(env, eval_action=1)
     env = gym.wrappers.RecordEpisodeStatistics(env)
     env = Monitor(
         env,
         filename=f'{cfg.meta.task.id}/{cfg.main.task.id}/{cfg.main.alg.id}/{cfg.run.seed}',
-        info_keywords=('agent_returns', 'cfr_agent_returns', 'agent_stats' , 'cf_agent_stats')
+        info_keywords=('agent_stats' , 'cf_agent_stats')
     )
     env.seed(cfg.run.seed)
 
-    mab = Exp3S(
+    mab = UCB(
         nbArms=env.action_space.n,
-        alpha=1e-3,
-        gamma=0.05,
+        # alpha=1e-5,
+        # gamma=0.05,
     )
     mab.startGame()
 
@@ -77,6 +70,7 @@ def main(
         if done:
             # print("t: ", mab.trusts)
             print("r: ", mab.rewards)
+            print("p: ", mab.pulls)
             env.reset()
     
 

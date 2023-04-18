@@ -7,12 +7,15 @@ from ccgm.common.envs.rl.gym.miniatar import (
     MINATAR_STRATEGIES_all, MINATAR_STRATEGIES_v0,
     MINATAR_STRATEGIES_v1
 )
-from ccgm.common.envs.rl.gym.miniatar.utils import MinAtarStandardObservation
-
+from ccgm.common.envs.rl.gym.miniatar.utils import (
+    MinAtarStandardObservation,
+    ClipRewardEnv
+)
 
 def make_minatar_env(env_id: str) -> gym.Env:
     env = gym.make(env_id)
     env = MinAtarStandardObservation(env)
+    env = ClipRewardEnv(env)
     return env
 
 

@@ -1,11 +1,11 @@
 # @package _global_
 defaults:
-  - override /main/alg: ppo
-  - override /main/agent: ac_mlp
+  - override /main/alg: dqn
+  - override /main/agent: q_mlp
   - override /main/task: sipd
   - override /meta/task: cf_task_with_index
 
-description: "counterfactual learning progression on minatar"
+description: "counterfactual with out on sipd"
 
 main:
   alg:
@@ -14,6 +14,6 @@ main:
 
 meta:
   task:
-    id: "cf_lp"
-    learning_progression: true
+    id: "cf"
+    learning_progression: false
     episode_time_limit: 50

@@ -5,7 +5,7 @@ defaults:
   - override /main/task: sipd
   - override /meta/task: cf_task_with_index
 
-description: "counterfactual learning progression on minatar"
+description: "counterfactual without on sipd"
 
 main:
   alg:
@@ -14,6 +14,6 @@ main:
 
 meta:
   task:
-    id: "cf_lp"
-    learning_progression: true
+    id: "cf"
+    learning_progression: false
     episode_time_limit: 50

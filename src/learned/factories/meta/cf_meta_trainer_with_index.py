@@ -7,6 +7,7 @@ from learned.core import (
     CounterfactualRewardWrapper, CounterfactualSelfPlayWrapper
 )
 from learned.utils import make_meta_env
+from learned.wrappers import FixedEvaluatorWrapper
 
 
 def make_task(
@@ -21,6 +22,8 @@ def make_task(
         task_config: DictConfig
     ):
         env = make_meta_env(task_config, counter_factual=True)
+        env = FixedEvaluatorWrapper(env, eval_action=evaluator_action)
+
         if episode_time_limit > 0:
             env = TimeLimit(
                 env,

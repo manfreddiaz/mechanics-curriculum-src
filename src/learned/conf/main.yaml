@@ -4,6 +4,7 @@ defaults:
     - main/agent: ac_mlp
     - main/task: sipd
     - meta/task: task_with_index
+    - meta/alg: exp3
 
 run:
     seed: 0

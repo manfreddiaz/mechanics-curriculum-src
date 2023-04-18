@@ -108,7 +108,6 @@ class MetaTrainingEnvironment(gym.Env[Agent, int]):
             env.seed(seed)
         for env in self._eval_envs:
             env.seed(seed)
-
         return super().seed(seed)
 
 
@@ -136,6 +135,12 @@ class CounterfactualMetaTrainingEnvironment(MetaTrainingEnvironment):
             seed=seed, return_info=return_info, options=options)
         return self._agent, self._cf_agent
     
+    def seed(self, seed=None):
+        for env in self._train_envs:
+            env.seed(seed)
+        for env in self._eval_envs:
+            env.seed(seed) 
+        return super().seed(seed)
 
     def step(self, action: Tuple[int]) -> Tuple[Tuple[Agent, Agent], Tuple[float, float], bool, dict]:
         info = dict()
@@ -149,20 +154,20 @@ class CounterfactualMetaTrainingEnvironment(MetaTrainingEnvironment):
             self._agent.memory.reset()
         
         if self._cf_agent.memory.full:
-            self._agent.memory.reset()
+            self._cf_agent.memory.reset()
 
         if self._need_reset[trainer_action]:
             rb = self._agent.memory
             rb.observations[rb.pos] = self._train_envs[trainer_action].reset()  # noqa
             if trainer_action == evaluator_action:
                 c_rb = self._cf_agent.memory
-                c_rb.observations[c_rb.pos] = rb.observations[rb.pos]
+                c_rb.observations[c_rb.pos] = np.copy(rb.observations[rb.pos])
             self._need_reset[trainer_action] = False
         # what if the two actions are the same.
         if self._need_reset[evaluator_action]:
             rb = self._cf_agent.memory
             rb.observations[rb.pos] = self._train_envs[evaluator_action].reset()  # noqa
-            self._need_reset[evaluator_action]
+            self._need_reset[evaluator_action] = False
 
         play_steps, optim_steps = self._alg_play_fn(
             self._agent,
@@ -205,7 +210,8 @@ class CounterfactualSelfPlayWrapper(gym.Wrapper):
     def __init__(
         self, 
         env: CounterfactualMetaTrainingEnvironment,
-        learning_progression: bool = False
+        learning_progression: bool = False,
+        self_play: bool = False
     ):
         super().__init__(env)
         self._learning_progression = learning_progression
@@ -213,11 +219,15 @@ class CounterfactualSelfPlayWrapper(gym.Wrapper):
             self._agent_last_reward = 0.0
             self._cf_last_reward = 0.0
 
+        self._self_play = self_play
+
+
 
     def reset(self, **kwargs):
         self._agent_returns = 0.0
         self._cf_agent_returns = 0.0
         return super().reset(**kwargs)
+    
 
     def step(self, action):
         obs, rewards, done, info = super().step(action)
@@ -231,33 +241,36 @@ class CounterfactualSelfPlayWrapper(gym.Wrapper):
         info['agent_returns'] = self._agent_returns
         info['cfr_agent_returns'] = self._cf_agent_returns
 
-        if self._learning_progression:
-            agent_lp = reward - self._agent_last_reward
-            cf_agent_lp = cf_reward - self._cf_last_reward
-
-            self._agent_last_reward = reward
-            self._cf_last_reward = cf_reward
-
-            rewards = [agent_lp, cf_agent_lp]
-
-
         if done:
-            agent, cf_agent = obs
-            if self._agent_returns >= self._cf_agent_returns:
-                cf_agent.copy(agent)
-                # NOTE: if learning progression is enabled, then switch
-                # the last reward after the copy
-                if self._learning_progression:
-                    self._cf_last_reward = self._agent_last_reward
-            else:
-                agent.copy(cf_agent)
-                # NOTE: if learning progression is enabled, then switch
-                # the last reward after the copy
-                if self._learning_progression:
-                    self._agent_last_reward = self._cf_last_reward
+            if self._self_play:
+                agent, cf_agent = obs
+                if self._agent_returns > self._cf_agent_returns:
+                    cf_agent.copy(agent)
+                    # NOTE: if learning progression is enabled, then switch
+                    # the last reward after the copy
+                    if self._learning_progression:
+                        self._cf_last_reward = self._agent_last_reward
+                elif self._cf_agent_returns > self._cf_agent_returns:
+                    agent.copy(cf_agent)
+                    # NOTE: if learning progression is enabled, then switch
+                    # the last reward after the copy
+                    if self._learning_progression:
+                        self._agent_last_reward = self._cf_last_reward
+                else:
+                    pass
                     
             self._agent_returns = self._cf_agent_returns = 0.0
         
+
+        if self._learning_progression:
+            reward = reward - self._agent_last_reward + reward - cf_reward
+            cf_reward = cf_reward - self._cf_last_reward + cf_reward - reward
+            self._agent_last_reward = reward
+            self._cf_last_reward = cf_reward
+
+            rewards = [reward, cf_reward]
+
+
         return obs, rewards, done, info
 
 
@@ -282,4 +295,4 @@ class CounterfactualRewardWrapper(gym.Wrapper):
         info['cf_agent_stats'] = self._cf_agent_stats
 
         reward, cf_reward = rewards
-        return obs, reward - cf_reward, done, info
+        return obs, reward, done, info

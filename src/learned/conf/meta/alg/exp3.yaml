@@ -1,0 +1,5 @@
+_target_: factories.alg.exp3.make_alg
+
+variant: "exp3s" # choice from [exp3, exp3S, exp3R]
+alpha: 0.00001
+gamma: 0.05

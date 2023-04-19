@@ -61,6 +61,8 @@ def eval_agent(
                 rewards[i] = 0.0
                 steps[i] = 0
 
+    episodes_rewards = np.array(episodes_rewards)
+
     return np.mean(episodes_rewards), np.std(episodes_rewards)
 
 

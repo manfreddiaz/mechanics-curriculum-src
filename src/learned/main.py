@@ -55,10 +55,10 @@ def main(
     )
     env.seed(cfg.run.seed)
 
-    mab = UCB(
+    mab = Exp3S(
         nbArms=env.action_space.n,
-        # alpha=1e-5,
-        # gamma=0.05,
+        alpha=1e-3,
+        gamma=0.05,
     )
     mab.startGame()
 

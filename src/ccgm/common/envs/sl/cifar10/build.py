@@ -15,12 +15,9 @@ from ccgm.common.envs.sl.cifar10.net import Net
 from ccgm.common.envs.sl.utils import compute_confusion_matrix, compute_treachorus_pairs, train_or_load_model
 
 
-
-
-
 def main(
     seed: int = 1234, batch_size: int = 4, 
-    epochs: int = 1
+    epochs: int = 200
 ):
     random.seed(seed)
     np.random.seed(seed)

@@ -10,6 +10,7 @@ from torchmetrics.classification import MulticlassConfusionMatrix
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
+
 def train_or_load_model(
     model: nn.Module,
     device: torch.device,
@@ -51,6 +52,7 @@ def train_or_load_model(
 
     torch.save(model, save_path)
     return model
+
 
 def compute_confusion_matrix(
     net: nn.Module,

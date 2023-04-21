@@ -56,7 +56,7 @@ def main(
     )
 
     model = train_or_load_model(
-        model=Net(), device=device,
+        agent=Net(), device=device,
         epochs=epochs, trainloader=trainloader,
         save_path=os.path.join(ROOT_DIR, 'fashion-mnist10.pth')
     )

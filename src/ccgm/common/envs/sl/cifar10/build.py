@@ -41,7 +41,7 @@ def main(
     )
     
     model = train_or_load_model(
-        model=Net(), device=device,
+        agent=Net(), device=device,
         epochs=epochs, trainloader=trainloader,
         save_path=os.path.join(ROOT_DIR, 'cifar10.pth')
     )

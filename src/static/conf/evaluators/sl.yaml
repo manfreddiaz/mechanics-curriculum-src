@@ -1,0 +1,3 @@
+_target_: conf.evaluators.sl.make_evaluator
+id: sl
+metric: "accuracy"

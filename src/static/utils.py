@@ -2,11 +2,9 @@
 import logging
 import os
 import random
-import gym
 import numpy as np
 import torch
 from torch.utils.tensorboard import SummaryWriter
-from stable_baselines3.common.monitor import Monitor
 import hydra
 from omegaconf import DictConfig, OmegaConf
 from ccgm.common.coalitions import Coalition
@@ -72,24 +70,19 @@ def play(
 
     log.info(f"<playing> game {coalition.idx} with: {coalition.id}, seed: {seed}")
     
+    # Environment
     log.info(f'<build> environment {cfg.task.id} from config.')
-    _, game_factory = hydra.utils.instantiate(cfg.task)
-    make_env = game_factory(coalition, coalition.probs)
-    def monitored():
-        return Monitor(
-            make_env(),
-            filename=os.path.join(team_dir, f'{seed}.train'),
-            info_keywords=('meta-strategy',)
-        )
-    envs = gym.vector.SyncVectorEnv([
-        monitored for i in range(cfg.task.num_envs)
-    ])
-    envs.seed(seed)
+    _, make_env = hydra.utils.instantiate(cfg.task)
+    env = make_env(
+        coalition, coalition.probs,
+        team_dir, seed
+    )
 
+    # Agent
     log.info(f'<build> agent {cfg.agent.id} from config.') 
     make_agent = hydra.utils.instantiate(cfg.agent)
     agent = make_agent(
-        envs=envs,
+        envs=env,
         hparams=cfg.alg.hparams,
         device=torch.device(cfg.torch.device)
     )
@@ -98,10 +91,11 @@ def play(
         os.path.join(team_dir, f'{seed}i.model.ckpt')
     )
 
+    # Learning Algorithm
     log.info(f'<build> algorithm {cfg.alg.id} from config')
     make_alg = hydra.utils.instantiate(cfg.alg)
     learn_fn = make_alg(
-        envs=envs
+        envs=env
     )
     
     log.info(f'<learn>')

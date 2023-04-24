@@ -77,7 +77,7 @@ class PPO:
         logger,
         global_step: int,
         log_every: int,
-        log_file_format: int,
+        log_file_format: str,
         device: torch.device
     ):
 

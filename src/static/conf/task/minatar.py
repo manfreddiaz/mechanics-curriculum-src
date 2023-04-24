@@ -1,7 +1,8 @@
 import functools
+import os
 from typing import List, Union
 import gym
-from stable_baselines3 import DQN, PPO
+from stable_baselines3.common.monitor import Monitor
 from ccgm.common.coalitions import Coalition, OrderedCoalition
 from ccgm.common.envs.rl.gym.miniatar.utils import MinAtarStandardObservation
 from ccgm.common.games import CooperativeMetaGame
@@ -49,9 +50,10 @@ def make_cooperative_env(
     episode_time_limit: int,
     order: str,
     probs: List = None,
+
 ) -> 'CooperativeMetaGame':
 
-    env = CooperativeMetaGame(
+    return CooperativeMetaGame(
         meta_strategy=make_coalition(
             team=team,
             order=order,
@@ -59,8 +61,6 @@ def make_cooperative_env(
             total_time_limit=episode_time_limit
         )
     )
-
-    return env
 
 
 def make_task(
@@ -77,22 +77,32 @@ def make_task(
     elif version == 'all':
         players = MINATAR_STRATEGIES_all
     else:
-        raise NotImplementedError()
+        raise ValueError(version)
     
     game_spec = CoalitionalGame.make(
         players=players,
         ordered=True if order == 'ordered' else False
     )
 
-    def make_game(team, probs=None):
-        make_env = functools.partial( 
-            make_cooperative_env,
-            team=team,
-            order=order,
-            probs=probs,
-            episode_time_limit=episode_limit,
-        )
+    def make_env(
+        team: List[int], probs: list[int], 
+        team_dir: str, seed: int
+    ):
+        def monitored():
+            return Monitor(
+                make_cooperative_env(
+                    team=team,
+                    order=order,
+                    probs=probs,
+                    episode_time_limit=episode_limit,
+                ),
+                filename=os.path.join(team_dir, f'{seed}.train'),
+                info_keywords=('meta-strategy',)
+            )
+        envs = gym.vector.SyncVectorEnv([
+            monitored for i in range(num_envs)
+        ])
+        envs.seed(seed)
+        return envs
 
-        return make_env
-
-    return game_spec, make_game
+    return game_spec, make_env

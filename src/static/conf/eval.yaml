@@ -8,13 +8,14 @@ eval:
   alg: ${load:alg/ppo}
   task: ${load:task/sipd}
   agent: ${load:agent/ac_mlp}
+  evaluator: ${load:evaluators/rl}
   total_timesteps: 1000 
   seed: 1234
   num_seeds: 1
 
 
 thread_pool:
-  size: 8
+  size: 1
   maxtasks: 4
 
 torch:

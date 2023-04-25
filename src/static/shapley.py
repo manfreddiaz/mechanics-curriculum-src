@@ -11,7 +11,7 @@ from sklearn import preprocessing
 import hydra
 from omegaconf import DictConfig
 
-import static.core as core
+import static.csc as csc
 from static.utils import make_xpt_dir, hydra_custom_resolvers
 
 log = logging.getLogger(__name__)
@@ -46,13 +46,13 @@ def main(
     
     if cfg.method == 'shapley':
         assert cfg.task.order == 'random'            
-        method = core.shapley
+        method = csc.shapley
     elif cfg.method == 'nowak_radzik':
         assert cfg.task.order == 'ordered'
-        method = core.nowak_radzik
+        method = csc.nowak_radzik
     elif cfg.method == 'sanchez_bergantinos':
         assert cfg.task.order == 'ordered'
-        method = core.sanchez_bergantinos
+        method = csc.sanchez_bergantinos
     else:
         raise NotImplementedError(cfg.method)
     
@@ -71,9 +71,9 @@ def main(
 
     eval_teams = {team: None for team in meta_game.columns} # eval teams
     for team in eval_teams:
-        scaler = preprocessing.MinMaxScaler((-1, 1))
-        n_values = scaler.fit_transform(meta_game[team].to_numpy().reshape(-1, 1))
-        meta_game[team].iloc[:, ] = n_values.flatten()
+        # scaler = preprocessing.MinMaxScaler((-1, 1))
+        # n_values = scaler.fit_transform(meta_game[team].to_numpy().reshape(-1, 1))
+        meta_game[team].iloc[:, ] = meta_game[team].to_numpy().flatten()
         eval_teams[team] = method(meta_game[team], players)
     # save trainers
     trainer_df = pd.DataFrame.from_dict(eval_teams)

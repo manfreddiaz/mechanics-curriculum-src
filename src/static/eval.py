@@ -73,7 +73,7 @@ def eval(
     _, make_env = hydra.utils.instantiate(cfg.eval.task)
     env = make_env(
         evaluation_coalition, evaluation_coalition.probs,
-        train_dir, eval_seed
+        train_dir, eval_seed, train=False
     )
 
     eval_model = hydra.utils.instantiate(cfg.eval.evaluator)    

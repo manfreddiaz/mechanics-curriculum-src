@@ -15,7 +15,7 @@ from omegaconf import DictConfig
 
 from ccgm.utils import CoalitionMetadata
 
-import static.core as core
+import static.csc as core
 from static.utils import make_xpt_dir, hydra_custom_resolvers
 
 log = logging.getLogger(__name__)
@@ -81,9 +81,9 @@ def main(
     vpop_dfs = []
     eval_teams = {team: None for team in meta_game.columns} # eval teams
     for team in eval_teams:
-        scaler = preprocessing.MinMaxScaler((-1, 1))
-        n_values = scaler.fit_transform(meta_game[team].to_numpy().reshape(-1, 1))
-        meta_game[team].iloc[:, ] = n_values.flatten()
+        # scaler = preprocessing.MinMaxScaler((-1, 1))
+        # n_values = scaler.fit_transform(meta_game[team].to_numpy().reshape(-1, 1))
+        meta_game[team].iloc[:, ] = meta_game[team].to_numpy().flatten()
         vpop = core.vpop(meta_game[team], players)
         vpop_dfs.append(
             pd.DataFrame(vpop, index=players, columns=players)

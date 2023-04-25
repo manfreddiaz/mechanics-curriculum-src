@@ -1,9 +1,9 @@
 
 from torch.utils.data import DataLoader
 from ccgm.common.envs.sl.env import ClassCoalitionDataset
-from ccgm.common.envs.sl.mnist.config import ROOT_DIR
+from ccgm.common.envs.sl.cifar10.config import ROOT_DIR
 from ccgm.utils import CoalitionMetadata, CoalitionalGame
-from ccgm.common.envs.sl.mnist import (
+from ccgm.common.envs.sl.cifar10 import (
     SPURIOUS
 )
 

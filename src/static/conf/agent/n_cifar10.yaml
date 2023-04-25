@@ -1,0 +1,2 @@
+_target_: conf.agent.n_cifar10.make_agent
+id: cnn_cifar10

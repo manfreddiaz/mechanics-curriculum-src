@@ -7,6 +7,21 @@ import numpy as np
 from ccgm.utils import CoalitionMetadata
 
 
+class CooperativeGame:
+    def __init__(
+        self,
+        values: dict[str, float],
+        players: str
+    ) -> None:
+        pass
+
+    def is_convex(self):
+        pass
+
+    def is_superadditive(self):
+        pass
+
+
 def shapley(values: Dict[str, Any], players: list[str], ordered: bool = False) -> List[float]:
     value = {player: 0.0 for player in players}
     players_idx = np.arange(len(players))
@@ -134,3 +149,12 @@ def vpop(values: Dict[str, Any], players: list[str], ordered: bool = False) -> n
     )
 
     return np.array([vpop[key] for key in vpop])
+
+
+def core(values: Dict[str, Any], players: list[str]):
+    pass
+
+
+def ecore(values: Dict[str, Any], players: list[str]):
+    pass
+

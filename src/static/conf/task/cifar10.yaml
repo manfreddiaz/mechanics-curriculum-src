@@ -1,4 +1,4 @@
-_target_: conf.task.mnist.make_task
+_target_: conf.task.cifar10.make_task
 id: mnist
 order: random
 version: "spur"  # [spur, all]

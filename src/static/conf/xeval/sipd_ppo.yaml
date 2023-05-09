@@ -3,6 +3,10 @@ defaults:
   - /xper: sipd_ppo
 
 eval:
-  total_timesteps: 1000 
+  alg: ${load:alg/ppo}
+  task: ${load:task/sipd}
+  agent: ${load:agent/ac_mlp}
+  evaluator: ${load:evaluators/rl}
+  total_timesteps: 100 
   seed: 1234
   num_seeds: 1

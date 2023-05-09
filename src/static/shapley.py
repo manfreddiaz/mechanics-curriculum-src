@@ -27,47 +27,26 @@ def main(
     
     indir = make_xpt_dir(cfg)
 
-    df = pd.read_csv(os.path.join(indir, 'results.csv'))
-    df = df.groupby(['train_team', 'eval_team'])
+    meta_game = pd.read_csv(
+        os.path.join(indir, 'meta_game.csv'),
+        index_col=0
+    )
 
-    # compute initial and final performance across traini seeds
-    # and evaluation seeds
-    initial_perf = df["r_0"].agg('mean')
-    final_perf = df['r_1'].agg('mean')
-
-    if cfg.metric == 'contrib':
-        # contrib: performance at initialization vs final performance
-        metric = final_perf - initial_perf
-    elif cfg.metric == 'final':
-        # final: final performance, treat initialization as 0
-        metric = final_perf
-    else:
-        raise NotImplementedError()
-    
     if cfg.method == 'shapley':
         assert cfg.task.order == 'random'            
-        method = csc.shapley
+        method = csc.functional.shapley
     elif cfg.method == 'nowak_radzik':
         assert cfg.task.order == 'ordered'
-        method = csc.nowak_radzik
+        method = csc.functional.nowak_radzik
     elif cfg.method == 'sanchez_bergantinos':
         assert cfg.task.order == 'ordered'
-        method = csc.sanchez_bergantinos
+        method = csc.functional.sanchez_bergantinos
     else:
         raise NotImplementedError(cfg.method)
-    
-    meta_game = metric.reset_index()
-    meta_game = meta_game.pivot_table(
-        values=meta_game.columns[-1], 
-        index='train_team', 
-        columns='eval_team'
-    )
-    meta_game.to_csv(os.path.join(indir, 'meta_game.csv'))
 
     task, _ = hydra.utils.instantiate(cfg.task)
     players = [player for player in task.players]
     # trainer cooperative game
-    
 
     eval_teams = {team: None for team in meta_game.columns} # eval teams
     for team in eval_teams:
@@ -86,7 +65,9 @@ def main(
             train_teams[team] = method(meta_game.loc[team] * -1.0, players)
     
         evaluator_df = pd.DataFrame.from_dict(train_teams)
-        evaluator_df.to_csv(os.path.join(indir, f'evaluator_{cfg.method}_{cfg.metric}.csv'))
+        evaluator_df.to_csv(
+            os.path.join(indir, f'evaluator_{cfg.method}_{cfg.metric}.csv')
+        )
 
 
 if __name__ == '__main__':

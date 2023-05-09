@@ -1,5 +1,6 @@
 from collections import deque
 from itertools import permutations
+import itertools
 import math
 from typing import Any, Dict, List
 import numpy as np
@@ -7,108 +8,105 @@ import numpy as np
 from ccgm.utils import CoalitionMetadata
 
 
-class CooperativeGame:
-    def __init__(
-        self,
-        values: dict[str, float],
-        players: str
-    ) -> None:
-        pass
+class functional():
 
-    def is_convex(self):
-        pass
+    def shapley(
+        characteristic_fn: Dict[str, Any], players: list[str], 
+        ordered: bool = False
+    ) -> List[float]:
+        """
 
-    def is_superadditive(self):
-        pass
+        """
+        value = {player: 0.0 for player in players}
+        players_idx = np.arange(len(players))
+        players = np.array(players)
 
-
-def shapley(values: Dict[str, Any], players: list[str], ordered: bool = False) -> List[float]:
-    value = {player: 0.0 for player in players}
-    players_idx = np.arange(len(players))
-    players = np.array(players)
-
-    def forward_dynamics(coalition: list):
-        
-        for player_idx in filter(lambda x: x not in coalition, players_idx):
-            next_coalition = coalition + [player_idx]
-            if not ordered:
-                next_coalition_idx = sorted(next_coalition)
-                coalition_idx = sorted(coalition)
-            else:
-                next_coalition_idx = next_coalition
-                coalition_idx = coalition            
-            # maintain permutation invariance by order
-            next_coalition_id = CoalitionMetadata.to_id(players[next_coalition_idx])
-            coalition_id = CoalitionMetadata.to_id(players[coalition_idx])
-            
-            if len(coalition) > 0:
-                value[players[player_idx]] += values[next_coalition_id] - values[coalition_id]
-            else:
-                value[next_coalition_id] += (players.shape[0] - 1) * values[next_coalition_id]
-            
-            forward_dynamics(next_coalition)
-
-    forward_dynamics([])
-    
-    norm = math.factorial(players.shape[0])
-    value = {player: value * norm ** -1 for player, value in value.items()}
-
-    return value
-
-
-def nowak_radzik(values: Dict[str, Any], players: list[str]) -> List[float]:
-    return shapley(values, players, True)
-
-
-def sanchez_bergantinos(values: Dict[str, Any], players: list[str]) -> List[float]:
-    value = {player: 0.0 for player in players}
-    players_idx = np.arange(len(players))
-    players = np.array(players)
-
-    def backward_dynamics(coalition: list):
-        for player in coalition:
-            next_coalition = list(coalition)
-            next_coalition.remove(player)
-            coalition_id = CoalitionMetadata.to_id(players[coalition])
-            # log.info((coalition, next_coalition))
-            if len(next_coalition) > 0:
+        for permutation in itertools.permutations(players_idx):
+            for idx, player in enumerate(permutation):
+                if idx == 0:
+                    coalition_id = None
+                else:
+                    coalition = permutation[:idx] if ordered else sorted(permutation[:idx]) 
+                    coalition_id = CoalitionMetadata.to_id(players[coalition])
+                
+                next_coalition = permutation[: idx+1] if ordered else sorted(permutation[: idx+1])
                 next_coalition_id = CoalitionMetadata.to_id(players[next_coalition])
-                value[players[player]] += values[coalition_id] - values[next_coalition_id]
-            else:
-                value[players[player]] += values[coalition_id]
-            
-            backward_dynamics(next_coalition)
+                
+                if coalition_id is None:
+                    value[players[player]] += characteristic_fn[next_coalition_id]
+                else:
+                    value[players[player]] += characteristic_fn[next_coalition_id] - characteristic_fn[coalition_id]
+        
+        norm = math.factorial(players.shape[0])
+        value = {player: value * norm ** -1 for player, value in value.items()}
+
+        return value
 
 
-    for coalition in permutations(players_idx):
-        backward_dynamics(list(coalition))
-
-    norm = math.factorial(players.shape[0]) ** 2
-    value = {player: value * norm ** -1 for player, value in value.items()}
-
-    return value
-
-
-def vpop(values: Dict[str, Any], players: list[str], ordered: bool = False) -> np.array:
-    """
-        Computes the Value of a Player to Another Player from Hausken and Mohr, 2021
-    """
-    players_idx = np.arange(len(players))
-    players = np.array(players)
-    
-    if '' not in values:
-        values[''] = 0.0
-
-    def subgames_shapley():
+    def nowak_radzik(
+        characteristic_fn: Dict[str, Any], players: list[str]
+    ) -> List[float]:
         """
-            Computes each subgame Shapley value.
+            Computes Nowak & Radzik Shapley-based solution concept for
+            ordered coalitions. 
         """
+        return functional.shapley(characteristic_fn, players, True)
+
+
+    def sanchez_bergantinos(
+        characteristic_fn: Dict[str, Any], players: list[str]
+    ) -> List[float]:
+        """
+            Computes Sanchez & Bergatinos Shapley-based solution concept for
+            ordered coalitions.
+        """
+        value = {player: 0.0 for player in players}
+        players_idx = np.arange(len(players))
+        players = np.array(players)
+
+        def backward_dynamics(coalition: list):
+            for player in coalition:
+                next_coalition = list(coalition)
+                next_coalition.remove(player)
+                coalition_id = CoalitionMetadata.to_id(players[coalition])
+                # log.info((coalition, next_coalition))
+                if len(next_coalition) > 0:
+                    next_coalition_id = CoalitionMetadata.to_id(players[next_coalition])
+                    value[players[player]] += characteristic_fn[coalition_id] - characteristic_fn[next_coalition_id]
+                else:
+                    value[players[player]] += characteristic_fn[coalition_id]
+                
+                backward_dynamics(next_coalition)
+
+
+        for coalition in permutations(players_idx):
+            backward_dynamics(list(coalition))
+
+        norm = math.factorial(players.shape[0]) ** 2
+        value = {player: value * norm ** -1 for player, value in value.items()}
+
+        return value
+
+    def subgames_shapley(
+        characteristic_fn: Dict[str, Any], players: List[str], 
+        ordered: bool = False
+    ):
+        """
+            Computes all subgames Shapley value from the game described by
+            `charactersitic_fn`
+        """
+        players_idx = np.arange(len(players))
+        players = np.array(players)
+        
+        if '' not in characteristic_fn:
+            characteristic_fn[''] = 0.0
+
         cache = dict()
         cache[''] = np.zeros_like(players_idx, dtype=float)
         
         # computes subgames Shapley values
-        subg = dict()
-        subg[''] = np.zeros_like(players_idx, dtype=float)
+        subgames_values = dict()
+        subgames_values[''] = np.zeros_like(players_idx, dtype=float)
 
         # BFS traversal of the coalition formation graph
         queue = deque()
@@ -134,27 +132,47 @@ def vpop(values: Dict[str, Any], players: list[str], ordered: bool = False) -> n
                 if next_coalition_id not in cache:
                     cache[next_coalition_id] = np.array(cache[coalition_id])
                 
-                if o_next_coalition_id not in subg:
-                    subg[o_next_coalition_id] = np.zeros_like(subg[o_coalition_id])
+                if o_next_coalition_id not in subgames_values:
+                    subgames_values[o_next_coalition_id] = np.zeros_like(subgames_values[o_coalition_id])
                 
-                cache[next_coalition_id][player] += values[o_next_coalition_id] - values[o_coalition_id]
-                subg[o_next_coalition_id] += math.factorial(len(next_coalition)) ** -1 * cache[next_coalition_id]
+                cache[next_coalition_id][player] += characteristic_fn[o_next_coalition_id] - characteristic_fn[o_coalition_id]
+                subgames_values[o_next_coalition_id] += math.factorial(len(next_coalition)) ** -1 * cache[next_coalition_id]
 
-        return subg
-    
-    vpop = shapley(
-        values=subgames_shapley(),
-        players=players,
-        ordered=ordered
-    )
+        return subgames_values
 
-    return np.array([vpop[key] for key in vpop])
+    def vpop(characteristic_fn: Dict[str, Any], players: list[str], ordered: bool = False) -> np.array:
+        """
+            Computes Hausken and Mohr, 2001 Value of a Player to Another Player (vPoP) 
+        """
+        subgames_values = functional.subgames_shapley(
+            characteristic_fn=characteristic_fn,
+            players=players,
+            ordered=ordered
+        )
+        vpop = functional.shapley(
+            characteristic_fn=subgames_values,
+            players=players,
+            ordered=ordered
+        )
 
+        return np.array([vpop[key] for key in vpop])
 
-def core(values: Dict[str, Any], players: list[str]):
-    pass
+    def core(characteristic_fn: Dict[str, Any], players: list[str]):
+        """
+          Computes the core of a the cooperative game described by
+          `characteristic_fn` among players in `players`.
+        """
+        raise NotImplementedError()
 
+    def ecore(characteristic_fn: Dict[str, Any], players: list[str], epsilon: float):
+        """
+          Computes the e-core of a the cooperative game described by
+          `characteristic_fn` among players in `players`.
+        """
+        raise NotImplementedError()
 
-def ecore(values: Dict[str, Any], players: list[str]):
-    pass
-
+    def dividends(characteristic_fn: Dict[str, any], players: list[str]):
+        """
+          Compute Harsanyi dividends
+        """
+        raise NotImplementedError()

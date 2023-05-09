@@ -108,7 +108,7 @@ def make_task(
 
     def make_env(
         team: List[int], probs: list[int], 
-        team_dir: str, seed: int
+        team_dir: str, seed: int, train: bool = True
     ):
         def monitored():
             return Monitor(

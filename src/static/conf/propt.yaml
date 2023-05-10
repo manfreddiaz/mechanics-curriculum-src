@@ -6,16 +6,18 @@ defaults:
     # overridable with xper
 
 propt:
-    method: shapley # [shapley, sanchez_bergantinos, nowak_radzik]
+    reduce: all    # [all, mean, sum]
+    method: shapley # [shapley, uniform]
+    proj: softmax # [softmax, simplex]
 
 run:
     seed: 0
     num_seeds: 5
     outdir: logs/static/
-    log_every: 10000
+    log_every: 50   # updates in PPO
     
 thread_pool:
-    size: 8
+    size: 5
     maxtasks: 4
 
 torch:

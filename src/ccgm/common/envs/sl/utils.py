@@ -26,7 +26,8 @@ def train_or_load_model(
     logger,
     log_every: int = 2000,
     log_file_format: str = None,
-    learning_rate: float = 1e-4
+    learning_rate: float = 1e-4,
+    eval_fn = None
 ):
     
     if save_path and os.path.exists(save_path):
@@ -59,9 +60,9 @@ def train_or_load_model(
             running_loss += loss.item()
             if global_step % log_every == log_every - 1:
                 if logger is None:
-                        # print every `log_every` mini-batches
-                        print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss / log_every:.3f}')
-                        running_loss = 0.0
+                    # print every `log_every` mini-batches
+                    print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss / log_every:.3f}')
+                    running_loss = 0.0
                 else:
                     logger.add_scalar("charts/loss", running_loss / log_every, global_step)
                     logger.add_scalar("charts/epochs", epoch, global_step)
@@ -71,6 +72,10 @@ def train_or_load_model(
                         agent,
                         log_file_format.format(global_step)
                     )
+                
+                if eval_fn:
+                    eval_value = eval_fn(agent)
+                    logger.add_scalar("eval/returns", np.mean(eval_value), global_step)
     
     if save_path is not None:
         torch.save(agent, save_path)

@@ -121,7 +121,7 @@ def make_task(
                     sparse=sparse,
                     one_hot=one_hot
                 ),
-                filename=os.path.join(team_dir, f'{seed}.train'),
+                filename=os.path.join(team_dir, f'{seed}.train' if train else f'{seed}.eval'),
                 info_keywords=('meta-strategy',)
             )
         envs = gym.vector.SyncVectorEnv([

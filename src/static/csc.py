@@ -26,10 +26,10 @@ class functional():
                 if idx == 0:
                     coalition_id = None
                 else:
-                    coalition = permutation[:idx] if ordered else sorted(permutation[:idx]) 
+                    coalition = list(permutation[:idx]) if ordered else sorted(permutation[:idx]) 
                     coalition_id = CoalitionMetadata.to_id(players[coalition])
                 
-                next_coalition = permutation[: idx+1] if ordered else sorted(permutation[: idx+1])
+                next_coalition = list(permutation[: idx+1]) if ordered else sorted(permutation[: idx+1])
                 next_coalition_id = CoalitionMetadata.to_id(players[next_coalition])
                 
                 if coalition_id is None:
@@ -121,12 +121,12 @@ class functional():
                 player = coalition.pop()
                 
                 # whether the characteristic is permutation invariant or not
-                o_coalition = sorted(coalition) if not ordered else next_coalition
+                o_coalition = sorted(coalition) if not ordered else coalition
                 o_next_coalition = sorted(next_coalition) if not ordered else next_coalition
                 o_next_coalition_id = CoalitionMetadata.to_id(players[o_next_coalition])
                 o_coalition_id = CoalitionMetadata.to_id(players[o_coalition])
 
-                next_coalition_id =  CoalitionMetadata.to_id(players[next_coalition])
+                next_coalition_id = CoalitionMetadata.to_id(players[next_coalition])
                 coalition_id =  CoalitionMetadata.to_id(players[coalition])
 
                 if next_coalition_id not in cache:
@@ -149,11 +149,18 @@ class functional():
             players=players,
             ordered=ordered
         )
-        vpop = functional.shapley(
-            characteristic_fn=subgames_values,
-            players=players,
-            ordered=ordered
-        )
+        if ordered:
+            vpop = functional.sanchez_bergantinos(
+                characteristic_fn=subgames_values,
+                players=players,
+                # ordered=ordered
+            )
+        else:
+            vpop = functional.shapley(
+                characteristic_fn=subgames_values,
+                players=players,
+                ordered=False
+            )
 
         return np.array([vpop[key] for key in vpop])
 

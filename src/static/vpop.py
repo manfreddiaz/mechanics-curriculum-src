@@ -55,11 +55,11 @@ def main(
         # scaler = preprocessing.MinMaxScaler((-1, 1))
         # n_values = scaler.fit_transform(meta_game[team].to_numpy().reshape(-1, 1))
         meta_game[team].iloc[:, ] = meta_game[team].to_numpy().flatten()
-        vpop = core.functional.vpop(meta_game[team], players)
+        vpop = core.functional.vpop(meta_game[team], players, ordered=cfg.task.order)
         vpop_dfs.append(
             pd.DataFrame(vpop, index=players, columns=players)
         )
-    
+
     vpop_df = pd.concat(vpop_dfs, keys=eval_teams, names=['eval_team'])
     vpop_df.to_pickle(
         os.path.join(outdir, 'vpop.pkl')

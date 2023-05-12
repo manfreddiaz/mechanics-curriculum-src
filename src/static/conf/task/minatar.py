@@ -99,7 +99,7 @@ def make_task(
                     probs=probs,
                     episode_time_limit=episode_limit,
                 ),
-                filename=os.path.join(team_dir, f'{seed}.train'),
+                filename=os.path.join(team_dir, f'{seed}.train' if train else f'{seed}.eval'),
                 info_keywords=('meta-strategy',)
             )
         envs = gym.vector.SyncVectorEnv([

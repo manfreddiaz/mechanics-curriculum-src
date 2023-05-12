@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass, astuple
 import time
+from typing import Callable
 
 import gym
 import numpy as np
@@ -57,6 +58,7 @@ class PPOHparams:
     max_grad_norm: float
     target_kl: float
 
+
 @dataclass
 class PPORparams:
     total_timesteps: int
@@ -107,12 +109,12 @@ class PPO:
                     logger.add_scalar("charts/episodic_length", item["episode"]["l"], global_step)
                     break
             
-            if log_every != -1 and global_step % log_every == 0:
-                assert log_file_format is not None
-                torch.save(
-                    agent,
-                    log_file_format.format(global_step)
-                )
+            # if log_every != -1 and global_step % log_every == 0:
+            #     assert log_file_format is not None
+            #     torch.save(
+            #         agent,
+            #         log_file_format.format(global_step)
+            #     )
 
         # bootstrap value if not done
         with torch.no_grad():
@@ -246,7 +248,8 @@ class PPO:
         logger,
         device,
         log_every: int = -1, # means no intermediate save log
-        log_file_format: str = None
+        log_file_format: str = None,
+        eval_fn: Callable[[OnPolicyAgent], float] = None
     ):
         # TRY NOT TO MODIFY: start the game
         global_step = 0
@@ -290,6 +293,12 @@ class PPO:
                 log_file_format=log_file_format
             )
             
+            if (update + 1) % log_every:
+                episodic_rewards = eval_fn(
+                    agent.policy
+                )
+                logger.add_scalar("eval/returns", np.mean(episodic_rewards), global_step)
+
             logger.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
 
 

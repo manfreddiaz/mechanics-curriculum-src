@@ -2,6 +2,7 @@ import functools
 import os
 from typing import List, Union
 import gym
+from gym.wrappers import TimeLimit
 from stable_baselines3.common.monitor import Monitor
 from ccgm.common.coalitions import Coalition, OrderedCoalition
 from ccgm.common.envs.rl.gym.miniatar.utils import MinAtarStandardObservation
@@ -17,6 +18,8 @@ from ccgm.common.envs.rl.gym.miniatar import (
 def make_minatar_env(env_id: str) -> gym.Env:
     env = gym.make(env_id)
     env = MinAtarStandardObservation(env)
+    # https://github.com/kenjyoung/MinAtar/issues/19
+    env = TimeLimit(env, 1000)
     return env
 
 def make_coalition(
@@ -86,7 +89,7 @@ def make_task(
 
     def make_env(
         team: List[int], probs: list[int], 
-        team_dir: str, seed: int
+        team_dir: str, seed: int, train: bool = True
     ):
         def monitored():
             return Monitor(

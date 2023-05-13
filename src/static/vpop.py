@@ -66,7 +66,8 @@ def main(
         meta_game[team].iloc[:, ] = meta_game[team].to_numpy().flatten()
         vpop = core.functional.vpop(
             meta_game[team], players,
-            solution_concept=solution_concept, ordered=cfg.task.order
+            solution_concept=solution_concept, 
+            ordered=cfg.task.order == "ordered"
         )
         vpop_dfs.append(
             pd.DataFrame(vpop, index=players, columns=players)

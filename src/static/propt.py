@@ -23,7 +23,7 @@ def coalition_from_shapley_value(
     indir: str, 
     cfg: DictConfig,
 ):
-    if cfg.propt.method == "shapley":
+    if cfg.propt.method in ["shapley", "nowak_radzik", "sanchez_bergantinos"]:
         value = pd.read_csv(
             os.path.join(indir, f"trainer_{cfg.propt.method}_final.csv"),
             index_col=0

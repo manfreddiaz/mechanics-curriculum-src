@@ -23,7 +23,7 @@ def main(
     
     indir = make_xpt_dir(cfg)
 
-    df = pd.read_csv(os.path.join(indir, 'results0.csv'))
+    df = pd.read_csv(os.path.join(indir, 'results.csv'))
     df = df.groupby(['train_team', 'eval_team'])
 
     # compute initial and final performance across traini seeds

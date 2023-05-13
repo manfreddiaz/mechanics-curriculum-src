@@ -30,7 +30,17 @@ def main(
         f"{cfg.task.order}",
         f"{cfg.alg.id}"
     )
-    
+
+    if cfg.solution_concept == "sanchez_bergantinos":
+        assert cfg.task.order == "ordered"
+        solution_concept = core.functional.sanchez_bergantinos
+    elif cfg.solution_concept == "nowak_radzik":
+        assert cfg.task.order == "ordered"
+        solution_concept = core.functional.nowak_radzik
+    elif cfg.solution_concept == "shapley":
+        assert cfg.task.order == "random"
+        solution_concept = core.functional.shapley
+
     assert os.path.exists(indir), "invalid step, run [main, eval, cmg] first"
 
     outdir = os.path.join(
@@ -38,6 +48,7 @@ def main(
         "vpop",
         f"{cfg.task.order}",
         f"{cfg.alg.id}",
+        f"{cfg.solution_concept}"
     )
     os.makedirs(outdir, exist_ok=True)
 
@@ -52,17 +63,18 @@ def main(
     vpop_dfs = []
     eval_teams = [team for team in meta_game.columns] # eval teams
     for team in eval_teams:
-        # scaler = preprocessing.MinMaxScaler((-1, 1))
-        # n_values = scaler.fit_transform(meta_game[team].to_numpy().reshape(-1, 1))
         meta_game[team].iloc[:, ] = meta_game[team].to_numpy().flatten()
-        vpop = core.functional.vpop(meta_game[team], players, ordered=cfg.task.order)
+        vpop = core.functional.vpop(
+            meta_game[team], players,
+            solution_concept=solution_concept, ordered=cfg.task.order
+        )
         vpop_dfs.append(
             pd.DataFrame(vpop, index=players, columns=players)
         )
 
     vpop_df = pd.concat(vpop_dfs, keys=eval_teams, names=['eval_team'])
     vpop_df.to_pickle(
-        os.path.join(outdir, 'vpop.pkl')
+        os.path.join(outdir, f'vpop.pkl')
     )
 
 

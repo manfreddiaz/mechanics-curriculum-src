@@ -111,15 +111,12 @@ class functional():
         return subgames_solutions
 
     def vpop(
-            characteristic_fn: Dict[str, Any], players: list[str], ordered: bool = False) -> np.array:
+            characteristic_fn: Dict[str, Any], players: list[str],
+            solution_concept: Callable[[dict, list], dict], ordered: bool = False) -> np.array:
         """
             Computes Hausken and Mohr, 2001 Value of a Player to Another Player (vPoP) 
         """
-        if ordered:
-            solution_concept = functional.sanchez_bergantinos
-        else:
-            solution_concept = functional.shapley
-        
+
         subgames_values = functional.subgames(
             characteristic_fn=characteristic_fn,
             players=players, solution_concept=solution_concept,

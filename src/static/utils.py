@@ -88,7 +88,7 @@ def play(
 
     eval_fn = None
     # Evaluation
-    if cfg.eval:
+    if 'eval' in cfg:
         log.info(f'<build> eval environment {cfg.task.id} from config.')
         _, make_env = hydra.utils.instantiate(cfg.eval.task)
         eval_env = make_env(

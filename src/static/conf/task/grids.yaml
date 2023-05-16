@@ -2,4 +2,4 @@ _target_: conf.task.grids.make_task
 id: grids
 order: random
 num_envs: 1
-episode_limit: 1000
+episode_limit: 1000000

@@ -4,7 +4,6 @@ from typing import List, Union
 import gym
 import gym_minigrid
 
-from gym.wrappers import TimeLimit
 from stable_baselines3.common.monitor import Monitor
 from ccgm.common.coalitions import Coalition, OrderedCoalition
 from ccgm.common.games import CooperativeMetaGame

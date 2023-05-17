@@ -19,7 +19,7 @@ def eval_model(
     next_obs = env.reset()
     while (run_episodes < num_steps).any():
         with torch.no_grad():
-            action = model.predict(torch.tensor(next_obs).to(device))
+            action = model.predict(torch.tensor(next_obs, dtype=torch.float32).to(device))
         next_obs, reward, done, info = env.step(action.cpu().numpy())
         rewards += reward
         steps += 1

@@ -42,6 +42,9 @@ class OnPolicyAgent:
     memory: OnPolicyReplayBuffer
     optimizer: torch.optim.Optimizer
 
+    def predict(self, x):
+        return self.policy.predict(x)
+
 
 @dataclass
 class PPOHparams:

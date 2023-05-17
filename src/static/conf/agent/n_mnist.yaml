@@ -1,0 +1,2 @@
+_target_: conf.agent.n_mnist.make_agent
+id: cnn_mnist

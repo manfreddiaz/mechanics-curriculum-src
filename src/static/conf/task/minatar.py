@@ -1,6 +1,9 @@
 import functools
+import os
 from typing import List, Union
-
+import gym
+from gym.wrappers import TimeLimit
+from stable_baselines3.common.monitor import Monitor
 from ccgm.common.coalitions import Coalition, OrderedCoalition
 from ccgm.common.envs.rl.gym.miniatar import (MINATAR_STRATEGIES_all,
                                               MINATAR_STRATEGIES_v0,
@@ -9,6 +12,18 @@ from ccgm.common.envs.rl.gym.miniatar import (MINATAR_STRATEGIES_all,
 from ccgm.common.games import CooperativeMetaGame
 from ccgm.utils import CoalitionalGame
 
+from ccgm.common.envs.rl.gym.miniatar import (
+    MINATAR_STRATEGIES_v0,
+    MINATAR_STRATEGIES_v1,
+    MINATAR_STRATEGIES_all
+)
+
+def make_minatar_env(env_id: str) -> gym.Env:
+    env = gym.make(env_id)
+    env = MinAtarStandardObservation(env)
+    # https://github.com/kenjyoung/MinAtar/issues/19
+    env = TimeLimit(env, 1000)
+    return env
 
 def make_coalition(
     team,
@@ -41,9 +56,10 @@ def make_cooperative_env(
     episode_time_limit: int,
     order: str,
     probs: List = None,
+
 ) -> 'CooperativeMetaGame':
 
-    env = CooperativeMetaGame(
+    return CooperativeMetaGame(
         meta_strategy=make_coalition(
             team=team,
             order=order,
@@ -51,8 +67,6 @@ def make_cooperative_env(
             total_time_limit=episode_time_limit
         )
     )
-
-    return env
 
 
 def make_task(
@@ -69,22 +83,32 @@ def make_task(
     elif version == 'all':
         players = MINATAR_STRATEGIES_all
     else:
-        raise NotImplementedError()
-
+        raise ValueError(version)
+    
     game_spec = CoalitionalGame.make(
         players=players,
         ordered=True if order == 'ordered' else False
     )
 
-    def make_game(team, probs=None):
-        make_env = functools.partial(
-            make_cooperative_env,
-            team=team,
-            order=order,
-            probs=probs,
-            episode_time_limit=episode_limit,
-        )
+    def make_env(
+        team: List[int], probs: list[int], 
+        team_dir: str, seed: int, train: bool = True
+    ):
+        def monitored():
+            return Monitor(
+                make_cooperative_env(
+                    team=team,
+                    order=order,
+                    probs=probs,
+                    episode_time_limit=episode_limit,
+                ),
+                filename=os.path.join(team_dir, f'{seed}.train' if train else f'{seed}.eval'),
+                info_keywords=('meta-strategy',)
+            )
+        envs = gym.vector.SyncVectorEnv([
+            monitored for i in range(num_envs)
+        ])
+        envs.seed(seed)
+        return envs
 
-        return make_env
-
-    return game_spec, make_game
+    return game_spec, make_env

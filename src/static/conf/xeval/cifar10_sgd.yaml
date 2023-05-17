@@ -1,0 +1,13 @@
+# @package _global_
+defaults:
+  - /xper: cifar10_sgd
+
+eval:
+  alg: ${load:alg/sgd}
+  task: ${load:task/cifar10}
+  agent: ${load:agent/n_cifar10}
+  evaluator: ${load:evaluators/sl}
+  total_timesteps: 1 
+  seed: 1234
+  num_seeds: 1
+

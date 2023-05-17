@@ -48,27 +48,6 @@ def load_coalition_models(
     return i_model, f_model
 
 
-def eval_model(
-    model, 
-    env: gym.vector.VectorEnv, 
-    num_steps: int,
-    cfg: DictConfig
-):
-    device = torch.device(cfg.torch.device) 
-    rewards = np.zeros(shape=(env.num_envs, num_steps)) 
-
-    obs = env.reset()
-    for step in range(num_steps):
-        action = model.predict(torch.tensor(obs, device=device))
-        next_obs, reward, done, info = env.step(action.cpu().numpy())
-        rewards[::, step] = reward
-        if all(done):
-            next_obs = env.reset()
-        obs = next_obs
-    
-    return rewards
-
-
 def eval(
     training_coalition: CoalitionMetadata,
     evaluation_coalition: CoalitionMetadata, 
@@ -91,38 +70,30 @@ def eval(
         cfg=cfg
     )
 
-    _, game_factory = hydra.utils.instantiate(cfg.eval.task)
-    make_env = game_factory(evaluation_coalition)
-    
-    def monitored():
-        env = make_env()
-        return Monitor(
-            env,
-            filename=os.path.join(train_dir, f'{train_seed}.eval'),
-            info_keywords=('meta-strategy',)
-        )
+    _, make_env = hydra.utils.instantiate(cfg.eval.task)
+    env = make_env(
+        evaluation_coalition, evaluation_coalition.probs,
+        train_dir, eval_seed, train=False
+    )
 
-    envs = gym.vector.SyncVectorEnv([
-        monitored
-    ])
-    envs.seed(eval_seed)
+    eval_model = hydra.utils.instantiate(cfg.eval.evaluator)    
 
     r_init = eval_model(
         init_agent, 
-        envs, 
+        env, 
         num_steps=cfg.eval.total_timesteps, 
-        cfg=cfg
+        device=cfg.torch.device
     )
     r_final = eval_model(
         final_agent, 
-        envs, 
+        env, 
         num_steps=cfg.eval.total_timesteps,
-        cfg=cfg
+        device=cfg.torch.device
     )
 
     log.info(f"<evaluation> game with: {training_coalition.id}, seed: {eval_seed}")
 
-    envs.close()
+    # env.close()
 
     return {
         'train_team': training_coalition.id,
@@ -174,8 +145,8 @@ def main(
             'train_team', 'train_seed', 'eval_team', 'eval_seed', 
             'r_0', 'r_0_std', 'r_1', 'r_1_std'
         ]
-        with open(f'{make_xpt_dir(cfg)}/results.csv', mode="w") as f:
-            with open(f"{make_xpt_dir(cfg)}/failures.csv", mode="w") as g:
+        with open(f'{make_xpt_dir(cfg)}/results.csv', mode="w+") as f:
+            with open(f"{make_xpt_dir(cfg)}/failures.csv", mode="w+") as g:
                 
                 results_writer = csv.DictWriter(f, fieldnames=fieldnames)
                 results_writer.writeheader()

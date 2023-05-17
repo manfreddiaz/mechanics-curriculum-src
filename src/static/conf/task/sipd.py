@@ -1,10 +1,8 @@
-
-
-import functools
+import os
 from typing import List
-
 import gym
 from gym.wrappers import TimeLimit
+from stable_baselines3.common.monitor import Monitor
 
 from ccgm.common.coalitions import Coalition, OrderedCoalition
 from ccgm.common.envs.sgt.impl.prisioner_dilemma import SPID_STRATEGIES
@@ -111,18 +109,29 @@ def make_task(
         ordered=True if order == 'ordered' else False
     )
 
-    def make_agent_coalition_env(team: List, probs: List = None):
-        make_env = functools.partial(
-            make_cooperative_env,
-            team=team,
-            ordered=order,
-            probs=probs,
-            episode_time_limit=episode_limit,
-            num_episodes=num_episodes,
-            sparse=sparse,
-            one_hot=one_hot
-        )
+    def make_env(
+        team: List[int], probs: list[int], 
+        team_dir: str, seed: int, train: bool = True
+    ):
+        def monitored():
+            return Monitor(
+                make_cooperative_env(
+                    team=team,
+                    ordered=order,
+                    probs=probs,
+                    episode_time_limit=episode_limit,
+                    num_episodes=num_episodes,
+                    sparse=sparse,
+                    one_hot=one_hot
+                ),
+                filename=os.path.join(team_dir, f'{seed}.train' if train else f'{seed}.eval'),
+                info_keywords=('meta-strategy',)
+            )
+        envs = gym.vector.SyncVectorEnv([
+            monitored for i in range(num_envs)
+        ])
+        envs.seed(seed)
+        return envs
 
-        return make_env
 
-    return game_spec, make_agent_coalition_env
+    return game_spec, make_env

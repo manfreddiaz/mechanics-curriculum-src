@@ -1,0 +1,5 @@
+,player,is_rational,rational_value,coalition,coalition_value
+0,SIPD/AlwaysCooperate-Default-v0+SIPD/AlwaysDefect-Default-v0+SIPD/TitForTat-Default-v0+SIPD/WinStayLoseSwitch-Default-v0+SIPD/ExtortionateZD-Default-v0,True,-0.0056,SIPD/AlwaysCooperate-Default-v0+SIPD/TitForTat-Default-v0,0.005
+1,SIPD/AlwaysCooperate-Default-v0+SIPD/AlwaysDefect-Default-v0+SIPD/TitForTat-Default-v0+SIPD/WinStayLoseSwitch-Default-v0+SIPD/ExtortionateZD-Default-v0,True,-0.0056,SIPD/AlwaysCooperate-Default-v0+SIPD/TitForTat-Default-v0+SIPD/WinStayLoseSwitch-Default-v0,0.005
+2,SIPD/AlwaysCooperate-Default-v0+SIPD/AlwaysDefect-Default-v0+SIPD/TitForTat-Default-v0+SIPD/WinStayLoseSwitch-Default-v0+SIPD/ExtortionateZD-Default-v0,True,-0.0056,SIPD/TitForTat-Default-v0,0.005
+3,SIPD/AlwaysCooperate-Default-v0+SIPD/AlwaysDefect-Default-v0+SIPD/TitForTat-Default-v0+SIPD/WinStayLoseSwitch-Default-v0+SIPD/ExtortionateZD-Default-v0,True,-0.0056,SIPD/TitForTat-Default-v0+SIPD/WinStayLoseSwitch-Default-v0,0.005

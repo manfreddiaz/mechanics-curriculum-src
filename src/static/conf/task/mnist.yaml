@@ -1,0 +1,7 @@
+_target_: conf.task.mnist.make_task
+id: mnist
+order: random
+version: "spur"  # [spur, all]
+batch_size: 4   # for the dataloader
+num_workers: 0  # for the dataloader
+train: True

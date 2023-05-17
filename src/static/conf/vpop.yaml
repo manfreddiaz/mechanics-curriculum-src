@@ -4,5 +4,4 @@ defaults:
     - agent: ac_mlp
     - task: sipd
 
-method: 'shapley' # [sanchez_bergantinos, nowak_radzik]
-metric: 'final'   # [contrib, final]
+solution_concept: 'shapley' # [sanchez_bergantinos, nowak_radzik]

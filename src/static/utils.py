@@ -1,14 +1,15 @@
 
+import functools
 import logging
 import os
 import random
 
-import gym
+from typing import Callable
 import hydra
 import numpy as np
 import torch
 from omegaconf import DictConfig, OmegaConf
-from stable_baselines3.common.monitor import Monitor
+from hydra.core.global_hydra import GlobalHydra
 from torch.utils.tensorboard import SummaryWriter
 
 from ccgm.common.coalitions import Coalition
@@ -55,18 +56,23 @@ def hydra_custom_resolvers():
 
 
 def play(
-    coalition: Coalition,
-    seed,
-    outdir,
-    cfg: DictConfig
+    train_coalition: Coalition, 
+    eval_coalition: Coalition,
+    seed, 
+    outdir, 
+    cfg: DictConfig,
 ):
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
+    
+    if GlobalHydra.instance() is not None:
+        if not GlobalHydra.instance().is_initialized():
+            hydra.initialize(version_base=None, config_path='conf')
 
     log = logging.getLogger()
     # loggging and saving config
-    team_dir = os.path.join(outdir, f'game-{str(coalition.idx)}')
+    team_dir = os.path.join(outdir, f'game-{str(train_coalition.idx)}')
     os.makedirs(team_dir, exist_ok=True)
 
     # avoid duplicated runs on restart
@@ -81,24 +87,35 @@ def play(
         f"<playing> game {coalition.idx} with: {coalition.id}, seed: {seed}")
 
     log.info(f'<build> environment {cfg.task.id} from config.')
-    _, game_factory = hydra.utils.instantiate(cfg.task)
-    make_env = game_factory(coalition, coalition.probs)
+    _, make_env = hydra.utils.instantiate(cfg.task)
+    env = make_env(
+        train_coalition, train_coalition.probs,
+        team_dir, seed
+    )
 
-    def monitored():
-        return Monitor(
-            make_env(),
-            filename=os.path.join(team_dir, f'{seed}.train'),
-            info_keywords=('meta-strategy',)
+    eval_fn = None
+    # Evaluation
+    if cfg.eval:
+        log.info(f'<build> eval environment {cfg.task.id} from config.')
+        _, make_env = hydra.utils.instantiate(cfg.eval.task)
+        eval_env = make_env(
+            eval_coalition, eval_coalition.probs,
+            team_dir, seed, train=False
         )
-    envs = gym.vector.SyncVectorEnv([
-        monitored for i in range(cfg.task.num_envs)
-    ])
-    envs.seed(seed)
+        eval_fn = hydra.utils.instantiate(cfg.eval.evaluator)
+        eval_fn = functools.partial(
+            eval_fn,
+            env=eval_env,
+            num_steps=cfg.eval.total_timesteps,
+            device=torch.device(cfg.torch.device)
+        )
 
-    log.info(f'<build> agent {cfg.agent.id} from config.')
+
+    # Agent
+    log.info(f'<build> agent {cfg.agent.id} from config.') 
     make_agent = hydra.utils.instantiate(cfg.agent)
     agent = make_agent(
-        envs=envs,
+        envs=env,
         hparams=cfg.alg.hparams,
         device=torch.device(cfg.torch.device)
     )
@@ -107,10 +124,11 @@ def play(
         os.path.join(team_dir, f'{seed}i.model.ckpt')
     )
 
+    # Learning Algorithm
     log.info(f'<build> algorithm {cfg.alg.id} from config')
     make_alg = hydra.utils.instantiate(cfg.alg)
     learn_fn = make_alg(
-        envs=envs
+        envs=env
     )
 
     log.info('<learn>')
@@ -119,7 +137,8 @@ def play(
         logger=SummaryWriter(os.path.join(team_dir, f'tb-{str(seed)}')),
         device=torch.device(cfg.torch.device),
         log_every=cfg.run.log_every,
-        log_file_format=os.path.join(team_dir, f'{seed}' + '-{}.model.ckpt')
+        log_file_format=os.path.join(team_dir, f'{seed}' + '-{}.model.ckpt'),
+        eval_fn = eval_fn
     )
 
     torch.save(
@@ -131,9 +150,12 @@ def play(
     # log game info
     if not os.path.exists(game_info_file):
         with open(game_info_file, mode='w') as f:
-            f.write(coalition.id)
+            f.write(train_coalition.id)
             f.write('\r\n')
             f.write(cfg.alg.id)
 
-    log.info(f"<completed> game with: {coalition.id}, seed: {seed}")
+    log.info(f"<completed> game with: {train_coalition.id}, seed: {seed}")
     return 0
+
+
+

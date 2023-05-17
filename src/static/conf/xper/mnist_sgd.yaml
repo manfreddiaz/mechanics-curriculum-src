@@ -1,0 +1,12 @@
+# @package _global_
+defaults:
+  - override /alg: sgd
+  - override /agent: n_mnist
+  - override /task: mnist
+
+
+run:
+    seed: 0
+    num_seeds: 5
+    outdir: logs/static/
+    log_every: 2000

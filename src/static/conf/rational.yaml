@@ -1,0 +1,7 @@
+defaults:
+    - _self_
+    - alg: ppo
+    - agent: ac_mlp
+    - task: sipd
+
+setting: target   # [target, all] the learning margins

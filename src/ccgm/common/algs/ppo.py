@@ -2,6 +2,7 @@
 import time
 from dataclasses import dataclass
 from typing import Protocol, Tuple
+from typing import Callable
 
 import gym
 import numpy as np
@@ -48,6 +49,7 @@ class HParamsPPO:
     vf_coef: float
     max_grad_norm: float
     target_kl: float
+
 
 
 @dataclass
@@ -101,7 +103,7 @@ class PPO:
         logger,
         global_step: int,
         log_every: int,
-        log_file_format: int,
+        log_file_format: str,
         device: torch.device
     ):
         policy = agent.policy
@@ -302,8 +304,9 @@ class PPO:
         rparams: RParamsPPO,
         logger,
         device,
-        log_every: int = -1,  # means no intermediate save log
-        log_file_format: str = None
+        log_every: int = -1, # means no intermediate save log
+        log_file_format: str = None,
+        eval_fn: Callable[[OnPolicyAgent], float] = None
     ):
         # TRY NOT TO MODIFY: start the game
         global_step = 0
@@ -341,7 +344,13 @@ class PPO:
             )
 
             if logger:
-                logger.add_scalar(
+                if (update + 1) % log_every:
+                episodic_rewards = eval_fn(
+                    agent.policy
+                )
+                logger.add_scalar("eval/returns", np.mean(episodic_rewards), global_step)
+
+            logger.add_scalar(
                     "charts/SPS",
                     int(global_step / (time.time() - start_time)),
                     global_step

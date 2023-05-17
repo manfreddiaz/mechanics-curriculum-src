@@ -1,0 +1,6 @@
+_target_: conf.alg.sgd.make_alg
+id: sgd
+optim: adam
+hparams:
+  epochs: 200
+  learning_rate: 0.0001

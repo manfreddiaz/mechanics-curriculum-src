@@ -4,7 +4,7 @@ from ccgm.utils import form_coalitions
 
 import numpy as np
 
-import src.static.core as core
+import src.static.csc as core
 
 
 class vPoPTest(unittest.TestCase):
@@ -26,7 +26,7 @@ class vPoPTest(unittest.TestCase):
             [ 25.0,  25.0, -20.0],
             [ 70.0, -20.0,  70.0]
         ])
-        vpop = core.vpop(
+        vpop = core.functional.vpop(
             pd.Series(characteristic),
             players=players,
             ordered=False
@@ -51,7 +51,7 @@ class vPoPTest(unittest.TestCase):
             [0.02778, 0.27778, 0.02778],
             [0.02778, 0.02778, 0.27778]
         ])
-        vpop = core.vpop(
+        vpop = core.functional.vpop(
             pd.Series(characteristic),
             players=players,
             ordered=False
@@ -77,7 +77,7 @@ class vPoPTest(unittest.TestCase):
             [0.1389, 0.1389, -0.1111],
             [0.1389, -0.1111, 0.1389]
         ])
-        vpop = core.vpop(
+        vpop = core.functional.vpop(
             pd.Series(characteristic),
             players=players,
             ordered=False
@@ -106,7 +106,7 @@ class vPoPTest(unittest.TestCase):
             [0.0278, 0.0,    0.1389, 0.0],
             [0.0278, 0.0,    0.0,    0.1389]
         ])
-        vpop = core.vpop(
+        vpop = core.functional.vpop(
             pd.Series(characteristic),
             players=players,
             ordered=False
@@ -128,7 +128,7 @@ class vPoPTest(unittest.TestCase):
             '1+2+3': 1.0
         }
         s_shapley = [1/6, 1/6, 2/3]
-        vpop = core.vpop(
+        vpop = core.functional.vpop(
             pd.Series(characteristic),
             players=players,
             ordered=False
@@ -148,7 +148,7 @@ class vPoPTest(unittest.TestCase):
         }
         s_shapley = [1.5, 2.5]
         
-        vpop = core.vpop(
+        vpop = core.functional.vpop(
             pd.Series(characteristic),
             players=players,
             ordered=False
@@ -168,7 +168,7 @@ class vPoPTest(unittest.TestCase):
         }
         s_shapley = [1100000., 300000]
 
-        vpop = core.vpop(
+        vpop = core.functional.vpop(
             pd.Series(characteristic),
             players=players,
             ordered=False
@@ -196,7 +196,7 @@ class vPoPTest(unittest.TestCase):
             571428.57142857,
             571428.57142857
         ]
-        vpop = core.vpop(
+        vpop = core.functional.vpop(
             pd.Series(characteristic),
             players=players,
             ordered=False

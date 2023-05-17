@@ -3,8 +3,24 @@
 
 ## Experiments
 
+### Training
 
-### Shapley-Proportional Curriculum
+```
+    python main.py +xper=mnist_sgd
+```
+
+### Evaluation
+```
+    python eval.py +xeval=mnist_sgd
+```
+
+### Shapley
+```
+    python shapley.py +xper=mnist_sgd
+```
+
+### Imputation-Proportional Curriculum
+
 
 #### Sparse IPD
 

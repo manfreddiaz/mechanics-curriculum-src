@@ -1,0 +1,2 @@
+_target_: conf.agent.n_fashionmnist.make_agent
+id: cnn_fashionmnist

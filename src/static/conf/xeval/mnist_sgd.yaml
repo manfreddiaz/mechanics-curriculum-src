@@ -1,0 +1,13 @@
+# @package _global_
+defaults:
+  - /xper: mnist_sgd
+
+eval:
+  alg: ${load:alg/sgd}
+  task: ${load:task/mnist}
+  agent: ${load:agent/n_mnist}
+  evaluator: ${load:evaluators/sl}
+  total_timesteps: 1 
+  seed: 1234
+  num_seeds: 1
+

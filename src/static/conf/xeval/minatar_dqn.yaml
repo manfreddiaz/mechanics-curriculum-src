@@ -6,6 +6,11 @@ eval:
   alg: ${load:alg/dqn}
   task: ${load:task/minatar}
   agent: ${load:agent/q_minatar}
-  total_timesteps: 5000 
+  evaluator: ${load:evaluators/rl}
+  total_timesteps: 10 
   seed: 1234
   num_seeds: 1
+
+
+run:
+    log_every: 20000   # updates in DQN

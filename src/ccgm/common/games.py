@@ -1,3 +1,4 @@
+from typing import Union
 import gym
 
 from .coalitions import Coalition
@@ -17,9 +18,13 @@ class CooperativeMetaGame(gym.Wrapper):
     def step(self, action):
         next_state, reward, done, info = super().step(action)
 
-        info['meta-strategy'] = self.env.spec.id
-        if done:
+        for i, inf in enumerate(info):
+            inf['meta-strategy'] = self.env.envs[i].spec.id
+            # print(self.env.envs[i].spec.id)
+
+        if any(done):
             self.env = self._meta_strategy()
+            next_state = self.env.reset()
 
         return next_state, reward, done, info
 

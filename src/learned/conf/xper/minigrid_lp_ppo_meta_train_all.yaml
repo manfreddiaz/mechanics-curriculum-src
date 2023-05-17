@@ -1,0 +1,23 @@
+# @package _global_
+defaults:
+  - override /main/alg: ppo
+  - override /main/agent: ac_minigrid
+  - override /main/task: grids
+  - override /meta/task: task_with_index
+
+description: "learning progression on minigrid"
+
+main:
+  alg:
+    hparams:
+      num_steps: 128
+  task:
+    episode_limit: 500000
+
+meta:
+  task:
+    id: "tscl"
+    evaluator_action: -1
+    episode_time_limit: 50
+  alg:
+    total_timesteps: 3907

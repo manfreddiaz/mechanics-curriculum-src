@@ -3,6 +3,8 @@ from typing import Callable, List, Optional, Tuple
 import gym
 import numpy as np
 from ccgm.common.algs.core import Agent, AlgorithmPlayFn, AlgorithmOptimizeFn
+from ccgm.common.coalitions import Coalition
+from ccgm.common.games import CooperativeMetaGame
 
 
 class DiscreteMetaEnvironment():
@@ -32,6 +34,11 @@ class MetaTrainingEnvironment(gym.Env[Agent, int]):
         self._train_envs = env_fn()
         self._need_reset = [True] * len(self._train_envs)
         self._eval_envs = env_fn()
+        self._all_eval_envs = CooperativeMetaGame(
+            meta_strategy=Coalition(
+                players=self._eval_envs
+            )
+        )
 
         # evaluation function
         self._eval_fn = eval_fn
@@ -88,9 +95,14 @@ class MetaTrainingEnvironment(gym.Env[Agent, int]):
         )
         self._learning_step += play_steps
 
+        if evaluator_action == -1:
+            eval_envs = self._all_eval_envs
+        else:
+            eval_envs = self._eval_envs[evaluator_action]
+
         reward, _ = self._eval_fn(
             self._agent,
-            envs=self._eval_envs[evaluator_action]
+            envs=eval_envs
         )
 
         info['meta_optimized'] = optim_steps > 0
@@ -100,6 +112,7 @@ class MetaTrainingEnvironment(gym.Env[Agent, int]):
         info['eval_action'] = evaluator_action
         info['train_env'] = self._train_envs[trainer_action]
         info['eval_env'] = self._eval_envs[evaluator_action]
+        info['reward'] = reward
         
         return self._agent, reward, False, info
 

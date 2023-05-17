@@ -345,19 +345,19 @@ class PPO:
                 log_file_format=log_file_format,
                 device=device
             )
-
-            if logger:
-                if (update + 1) % log_every:
-                episodic_rewards = eval_fn(
-                    agent.policy
-                )
-                logger.add_scalar("eval/returns", np.mean(episodic_rewards), global_step)
-
+            episodic_rewards = eval_fn(
+                agent.policy
+            )
             logger.add_scalar(
-                    "charts/SPS",
-                    int(global_step / (time.time() - start_time)),
-                    global_step
-                )
+                        "eval/returns", np.mean(episodic_rewards), global_step)
+            # if logger:
+            #     if (update + 1) % log_every:
+        
+            #         logger.add_scalar(
+            #             "charts/SPS",
+            #             int(global_step / (time.time() - start_time)),
+            #             global_step
+            #         )
 
             if agent.memory.full:
                 agent.memory.reset()

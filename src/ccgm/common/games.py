@@ -19,9 +19,11 @@ class CooperativeMetaGame(gym.Wrapper):
     def step(self, action):
         next_state, reward, done, info = super().step(action)
 
-        info['meta-strategy'] = self.env.spec.id
+        for i, inf in enumerate(info):
+            inf['meta-strategy'] = self.env.envs[i].spec.id
+        
         self.steps += 1
-        if done:
+        if any(done):
             self.env = self._meta_strategy(num_updates=self.steps)
             self.steps = 0
             self.env.reset()

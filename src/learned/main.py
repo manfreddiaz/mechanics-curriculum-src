@@ -1,5 +1,8 @@
 from distutils.util import strtobool
+import logging
+import os
 import random
+import traceback
 import numpy as np
 
 import gym
@@ -8,9 +11,11 @@ from omegaconf import DictConfig
 import torch
 
 from stable_baselines3.common.monitor import Monitor
-from SMPyBandits.Policies import Exp3, Exp3S, UCB, Hedge
+from SMPyBandits.Policies import Exp3S, Hedge
 
-from learned.utils import eval_agent, hydra_custom_resolvers
+from learned.utils import hydra_custom_resolvers
+from tensorboardX import SummaryWriter
+import torch.multiprocessing as tmp
 
 
 hydra_custom_resolvers()
@@ -35,44 +40,99 @@ def make_meta_agent(cfg: DictConfig, envs):
     return meta_agent, meta_alg_play_fn, meta_alg_optim_fn
 
 
-@hydra.main(version_base=None, config_path="conf", config_name="main")
-def main(
-    cfg: DictConfig
-) -> None:
-    random.seed(cfg.run.seed)
-    np.random.seed(cfg.run.seed)
-    torch.manual_seed(cfg.run.seed)
-    torch.backends.cudnn.deterministic = cfg.torch.deterministic
-    
-    epochs = 50000
+def play_bandit(seed, outdir, cfg: DictConfig):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+
+    logger = SummaryWriter(os.path.join(outdir, f'tb-{str(seed)}'))
+
     make_meta_task = hydra.utils.instantiate(cfg.meta.task)
     env = make_meta_task(cfg)
     env = gym.wrappers.RecordEpisodeStatistics(env)
     env = Monitor(
         env,
-        filename=f'{cfg.meta.task.id}/{cfg.main.task.id}/{cfg.main.alg.id}/{cfg.run.seed}',
-        info_keywords=('agent_stats' , 'cf_agent_stats')
+        filename=f'{outdir}/{seed}',
+        info_keywords=('agent_stats', 'cf_agent_stats')
     )
-    env.seed(cfg.run.seed)
+    env.seed(seed)
 
-    mab = Exp3S(
-        nbArms=env.action_space.n,
-        alpha=1e-3,
-        gamma=0.05,
-    )
-    mab.startGame()
+    if cfg.meta.alg.variant == "exp3s":
+        mab = Exp3S(
+            nbArms=env.action_space.n,
+            alpha=cfg.meta.alg.alpha,  # hparams Graves et al
+            gamma=cfg.meta.alg.gamma,
+        )
+        mab.startGame()
+    else:
+        raise ValueError('cfg.alg.variant')
 
-    obs = env.reset()
-    for i in range(epochs):
+    _ = env.reset()
+    for i in range(cfg.meta.alg.total_timesteps):
         action = mab.choice()
-        obs, reward, done, info = env.step(action)
-        mab.getReward(action, reward)       
+        _, reward, done, info = env.step(action)
+        mab.getReward(action, np.clip(reward, -1.0, 1.0))
+
+        global_step = i * info['play_steps']
+        logger.add_scalar(
+            "eval/returns", reward, global_step=global_step)
+
         if done:
-            # print("t: ", mab.trusts)
-            print("r: ", mab.rewards)
-            print("p: ", mab.pulls)
             env.reset()
-    
+            for arm in range(mab.nbArms):
+                logger.add_scalar(
+                    f"arm-{arm + 1}/reward", mab.rewards[arm],
+                    global_step=global_step)
+                logger.add_scalar(
+                    f"arm-{arm + 1}/pulls", mab.pulls[arm],
+                    global_step=global_step)
+
+    env.close()
+    logger.close()
+
+
+@hydra.main(version_base=None, config_path="conf", config_name="main")
+def main(
+    cfg: DictConfig
+) -> None:
+    torch.backends.cudnn.deterministic = cfg.torch.deterministic
+
+    log = logging.getLogger(__name__)
+
+    outdir = os.path.join(
+        cfg.run.outdir,
+        # cfg.meta.task.id,
+        cfg.main.task.id,
+        cfg.main.alg.id
+    )
+    os.makedirs(outdir, exist_ok=True)
+
+    seeds = range(cfg.run.seed, cfg.run.seed + cfg.run.num_seeds)
+    games = {}
+
+    tmp.set_start_method('spawn')
+    with tmp.Pool(
+        processes=cfg.thread_pool.size,
+        maxtasksperchild=cfg.thread_pool.maxtasks
+    ) as ppe:
+        for seed in seeds:
+            log.info(f"<submit> tscl game with seed: {seed}")
+            games[ppe.apply_async(
+                play_bandit, (seed, outdir, cfg))] = seed
+
+        for game in games:
+            try:
+                code = game.get()
+                seed = games[game]
+                log.info(
+                    f'<finished> game with {seed} finished with exit code {code}')
+            except Exception as ex:
+                log.error(
+                    f'<FAIL> game with {seed} with the following exception: \n',
+                    traceback.format_exc(),
+                    exc_info=ex
+                )
+
 
 if __name__ == '__main__':
     main()

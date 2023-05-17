@@ -1,5 +1,5 @@
+import torch
 import torch.nn as nn
-
 from torch.distributions.categorical import Categorical
 from .p_networks import MinAtarPolicy, MlpPolicy
 from .v_networks import MinatarValueNetwork, MlpValueNetwork
@@ -118,7 +118,7 @@ class MiniGridActorCritic(nn.Module):
             nn.ReLU()
         )
         self.embedding_size = 64
-        self.actor =  nn.Sequential(
+        self.actor = nn.Sequential(
             nn.Linear(self.embedding_size, 64),
             nn.Tanh(),
             nn.Linear(64, envs.single_action_space.n)
@@ -130,13 +130,14 @@ class MiniGridActorCritic(nn.Module):
         )
 
     def get_value(self, x):
+        x = x.float()
         x = x.transpose(1, 3).transpose(2, 3)
         x = self.image_conv(x)
         x = x.view(x.size(0), -1)
         return self.critic(x)
-        
 
-    def get_action_and_value(self, x, action=None):
+    def get_action_and_value(self, x: torch.Tensor, action=None):
+        x = x.float()
         x = x.transpose(1, 3).transpose(2, 3)
         x = self.image_conv(x)
         x = x.view(x.size(0), -1)

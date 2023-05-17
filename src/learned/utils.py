@@ -40,6 +40,8 @@ def eval_agent(
     # Adapted from https://stable-baselines3.readthedocs.io/en/master/_modules/stable_baselines3/common/evaluation.html # noqa
     policy = agent.policy
 
+    if isinstance(envs, list):
+        envs = gym.vector.SyncVectorEnv([lambda: env for env in envs])
     # accumulators
     rewards = np.zeros(envs.num_envs, dtype=np.float32)
     steps = np.zeros(envs.num_envs)
@@ -87,7 +89,7 @@ def make_meta_env(cfg: DictConfig, counter_factual: bool = False) -> gym.Env:
             ),
             eval_fn=functools.partial(
                 eval_agent,
-                episodes=5,  # 5 episodes on each vectorized env
+                episodes=10,  # 5 episodes on each vectorized env
                 device=torch.device(cfg.torch.device)
             )
         )
@@ -108,7 +110,7 @@ def make_meta_env(cfg: DictConfig, counter_factual: bool = False) -> gym.Env:
             ),
             eval_fn=functools.partial(
                 eval_agent,
-                episodes=5,  # 5 episodes on each vectorized env
+                episodes=10,  # 5 episodes on each vectorized env
                 device=torch.device(cfg.torch.device)
             )
         )

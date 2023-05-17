@@ -9,7 +9,7 @@ defaults:
 run:
     seed: 0
     num_seeds: 5
-    outdir: logs/static/
+    outdir: logs/tscl/
     log_every: -1
     
 thread_pool:
@@ -22,4 +22,3 @@ torch:
 
 log:
     level: 0
-

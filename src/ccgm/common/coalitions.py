@@ -48,7 +48,7 @@ class OrderedCoalition(Coalition):
         self.rng.seed(seed)
 
     def __call__(self, **kwargs) -> Callable:
+        self.time += kwargs.get('num_updates')
         action = np.searchsorted(self.segments, self.time)
         action = min(action, len(self._strategy_space) - 1)
-        self.time += 1
         return self._strategy_space[action]

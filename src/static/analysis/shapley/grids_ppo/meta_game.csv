@@ -1,0 +1,8 @@
+train_team,MiniGrid-MultiRoom-N2-S4-v0,MiniGrid-MultiRoom-N2-S4-v0+MiniGrid-MultiRoom-N4-S5-v0,MiniGrid-MultiRoom-N2-S4-v0+MiniGrid-MultiRoom-N4-S5-v0+MiniGrid-MultiRoom-N6-v0,MiniGrid-MultiRoom-N2-S4-v0+MiniGrid-MultiRoom-N6-v0,MiniGrid-MultiRoom-N4-S5-v0,MiniGrid-MultiRoom-N4-S5-v0+MiniGrid-MultiRoom-N6-v0,MiniGrid-MultiRoom-N6-v0
+MiniGrid-MultiRoom-N2-S4-v0,0.8339500000000001,0.6211250180000001,0.274724996,0.257600004,0.385675008,0.157150002,0.0
+MiniGrid-MultiRoom-N2-S4-v0+MiniGrid-MultiRoom-N4-S5-v0,0.050249999999999996,0.029199999999999997,0.01505,0.030549998000000002,0.0,0.0,0.0
+MiniGrid-MultiRoom-N2-S4-v0+MiniGrid-MultiRoom-N4-S5-v0+MiniGrid-MultiRoom-N6-v0,0.00425,0.0,0.0,0.0,0.0,0.0,0.0
+MiniGrid-MultiRoom-N2-S4-v0+MiniGrid-MultiRoom-N6-v0,0.155449998,0.042000001999999995,0.028975,0.0469500008,0.0,0.0161749988,0.0
+MiniGrid-MultiRoom-N4-S5-v0,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+MiniGrid-MultiRoom-N4-S5-v0+MiniGrid-MultiRoom-N6-v0,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+MiniGrid-MultiRoom-N6-v0,0.01255,0.0,0.0,0.0,0.0,0.0,0.0

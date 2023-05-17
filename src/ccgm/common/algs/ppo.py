@@ -34,6 +34,9 @@ class OnPolicyAgent(
         self.optimizer.load_state_dict(other.optimizer.state_dict())
         # TODO: replay buffer?
 
+    def predict(self, x):
+        return self.policy.predict(x)
+
 
 @dataclass
 class HParamsPPO:

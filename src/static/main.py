@@ -43,8 +43,7 @@ def main(
     ) as ppe:
         for seed, coalition in product(seeds, game_spec.coalitions):
             log.info(f"<submit> game with {coalition.id}, seed: {seed}")
-            games[ppe.apply_async(
-                play, (coalition, seed, outdir, cfg))] = coalition
+            games[ppe.apply_async(play, (coalition, None, seed, outdir, cfg))] = coalition
 
         for game in games:
             try:

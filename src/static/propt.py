@@ -36,6 +36,11 @@ def coalition_from_shapley_value(
         elif cfg.propt.reduce == "all":
             priors = value[
                 CoalitionMetadata.to_id(players)].to_numpy()
+        elif cfg.propt.reduce == "player":
+            assert "player" in cfg.propt
+            priors = value[
+                cfg.propt.player].to_numpy()
+
     elif cfg.propt.method == "uniform":
         priors = np.ones(shape=(len(players)))
     

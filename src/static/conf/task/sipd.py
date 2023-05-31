@@ -4,9 +4,12 @@ import gym
 from gym.wrappers import TimeLimit
 from stable_baselines3.common.monitor import Monitor
 
-from ccgm.common.envs.sgt.impl.prisioner_dilemma import SPID_STRATEGIES
 from ccgm.common.coalitions import Coalition, OrderedCoalition
-from ccgm.common.envs.sgt.wrappers import SparseRewardWrapper, OneHotObservationWrapper
+from ccgm.common.envs.sgt.impl.prisioner_dilemma import SPID_STRATEGIES
+from ccgm.common.envs.sgt.wrappers import (
+    OneHotObservationWrapper,
+    SparseRewardWrapper
+)
 from ccgm.common.games import CooperativeMetaGame
 from ccgm.utils import CoalitionalGame
 
@@ -19,20 +22,20 @@ def make_env(env_id, episode_time_limit, sparse, one_hot):
     )
     if sparse:
         env = SparseRewardWrapper(env)
-    
+
     if one_hot:
         env = OneHotObservationWrapper(env)
-    
+
     env = gym.wrappers.RecordEpisodeStatistics(env)
 
     return env
 
 
 def make_coalition(
-    team: List, 
-    order: str, 
-    episode_time_limit: int, 
-    total_time_limit: int, 
+    team: List,
+    order: str,
+    episode_time_limit: int,
+    total_time_limit: int,
     probs: List[float] = None,
     sparse: bool = True,
     one_hot: bool = True
@@ -121,7 +124,8 @@ def make_task(
                     sparse=sparse,
                     one_hot=one_hot
                 ),
-                filename=os.path.join(team_dir, f'{seed}.train' if train else f'{seed}.eval'),
+                filename=os.path.join(
+                    team_dir, f'{seed}.train' if train else f'{seed}.eval'),
                 info_keywords=('meta-strategy',)
             )
         envs = gym.vector.SyncVectorEnv([
@@ -130,6 +134,4 @@ def make_task(
         envs.seed(seed)
         return envs
 
-
     return game_spec, make_env
-

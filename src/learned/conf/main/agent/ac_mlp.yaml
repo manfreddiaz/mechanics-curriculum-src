@@ -1,0 +1,2 @@
+_target_: factories.agent.ac_mlp.make_agent
+id: ac_mlp

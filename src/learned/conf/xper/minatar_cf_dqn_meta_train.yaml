@@ -1,0 +1,18 @@
+# @package _global_
+defaults:
+  - override /main/alg: dqn
+  - override /main/agent: q_minatar
+  - override /main/task: minatar
+  - override /meta/task: cf_task_with_index # counterfactual
+
+description: "counterfactual metra training, no learning progression"
+
+main:
+  alg:
+    hparams:
+      num_steps: 128
+
+meta:
+  task:
+    learning_progression: false
+    episode_time_limit: 50

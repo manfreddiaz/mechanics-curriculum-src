@@ -1,7 +1,7 @@
 import functools
-from omegaconf import DictConfig
+
 import gym
-import torch
+from omegaconf import DictConfig
 
 from ccgm.common.algs.ppo import PPO
 
@@ -20,6 +20,5 @@ def make_alg(
             hparams=hparams,
             rparams=rparams
         )
-        
 
     return make_ppo

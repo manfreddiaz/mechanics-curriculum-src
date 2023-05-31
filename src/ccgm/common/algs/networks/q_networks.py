@@ -35,8 +35,8 @@ class MinAtarQNetwork(nn.Module):
         #   kernel_size: 3 of a 3x3 filter matrix
         #   stride: 1
         self.conv = nn.Conv2d(
-            envs.single_observation_space.shape[0], 
-            16, kernel_size=3, 
+            envs.single_observation_space.shape[0],
+            16, kernel_size=3,
             stride=1
         )
 
@@ -46,12 +46,15 @@ class MinAtarQNetwork(nn.Module):
         def size_linear_unit(size, kernel_size=3, stride=1):
             return (size - (kernel_size - 1) - 1) // stride + 1
         num_linear_units = size_linear_unit(10) * size_linear_unit(10) * 16
-        self.fc_hidden = nn.Linear(in_features=num_linear_units, out_features=128)
+        self.fc_hidden = nn.Linear(
+            in_features=num_linear_units, out_features=128)
 
         # Output layer:
-        self.output = nn.Linear(in_features=128, out_features=envs.single_action_space.n)
+        self.output = nn.Linear(
+            in_features=128, out_features=envs.single_action_space.n)
 
-    # As per implementation instructions according to pytorch, the forward function should be overwritten by all
+    # As per implementation instructions according to pytorch,
+    # the forward function should be overwritten by all
     # subclasses
     def forward(self, x):
         # Rectified output from the first conv layer
@@ -62,7 +65,7 @@ class MinAtarQNetwork(nn.Module):
 
         # Returns the output from the fully-connected linear layer
         return self.output(x)
-    
+
     def predict(self, x):
         q_values = self(x)
         return torch.argmax(q_values, dim=1)

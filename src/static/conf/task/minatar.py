@@ -5,7 +5,10 @@ import gym
 from gym.wrappers import TimeLimit
 from stable_baselines3.common.monitor import Monitor
 from ccgm.common.coalitions import Coalition, OrderedCoalition
-from ccgm.common.envs.rl.gym.miniatar.utils import MinAtarStandardObservation
+from ccgm.common.envs.rl.gym.miniatar import (MINATAR_STRATEGIES_all,
+                                              MINATAR_STRATEGIES_v0,
+                                              MINATAR_STRATEGIES_v1,
+                                              make_minatar_env)
 from ccgm.common.games import CooperativeMetaGame
 from ccgm.utils import CoalitionalGame
 
@@ -23,10 +26,10 @@ def make_minatar_env(env_id: str) -> gym.Env:
     return env
 
 def make_coalition(
-    team, 
+    team,
     order,
-    total_time_limit: int,  
-    probs = None,
+    total_time_limit: int,
+    probs: list = None,
 ):
 
     if order == 'random':

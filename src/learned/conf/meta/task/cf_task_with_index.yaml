@@ -1,0 +1,8 @@
+_target_: factories.meta.cf_meta_trainer_with_index.make_task
+
+id: "cf"
+learning_progression: false
+meta_player_id: 0 # trainer
+evaluator_action: 1  # always_defect 
+episode_time_limit: 100
+num_envs: 1

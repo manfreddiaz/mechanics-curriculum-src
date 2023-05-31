@@ -3,38 +3,43 @@ import functools
 import logging
 import os
 import random
+
 from typing import Callable
+import hydra
 import numpy as np
 import torch
-from torch.utils.tensorboard import SummaryWriter
-import hydra
-from hydra.core.global_hydra import GlobalHydra
 from omegaconf import DictConfig, OmegaConf
+from hydra.core.global_hydra import GlobalHydra
+from torch.utils.tensorboard import SummaryWriter
+
 from ccgm.common.coalitions import Coalition
 
 
 def make_xpt_dir(cfg):
     return os.path.join(
         cfg.run.outdir,
-        f"{cfg.task.id}", 
+        f"{cfg.task.id}",
         f"{cfg.task.order}",
         f"{cfg.alg.id}"
     )
+
 
 def make_xpt_coalition_dir(
     training_coalition: Coalition,
     cfg: DictConfig
 ):
-    
+
     return os.path.join(
-        make_xpt_dir(cfg), 
+        make_xpt_dir(cfg),
         f'game-{str(training_coalition.idx)}'
     )
+
 
 def _hydra_load_node(x: str):
     cfg = hydra.compose(f"{x}.yaml")
     cfg = cfg[list(cfg.keys())[0]]
     return cfg
+
 
 def hydra_custom_resolvers():
     OmegaConf.register_new_resolver(
@@ -69,16 +74,18 @@ def play(
     # loggging and saving config
     team_dir = os.path.join(outdir, f'game-{str(train_coalition.idx)}')
     os.makedirs(team_dir, exist_ok=True)
-   
+
     # avoid duplicated runs on restart
     final_model = os.path.join(team_dir, f'{seed}f.model.ckpt')
     if os.path.exists(final_model):
-        log.info(f"<duplicate> game {train_coalition.id} with: {train_coalition.id}, seed: {seed}")
+        log.info(
+            f"<duplicate> game {coalition.id}" 
+            + f" with: {coalition.id}, seed: {seed}")
         return 0
 
-    log.info(f"<playing> game {train_coalition.idx} with: {train_coalition.id}, seed: {seed}")
-    
-    # Environment
+    log.info(
+        f"<playing> game {coalition.idx} with: {coalition.id}, seed: {seed}")
+
     log.info(f'<build> environment {cfg.task.id} from config.')
     _, make_env = hydra.utils.instantiate(cfg.task)
     env = make_env(
@@ -113,7 +120,7 @@ def play(
         device=torch.device(cfg.torch.device)
     )
     torch.save(
-        agent, 
+        agent,
         os.path.join(team_dir, f'{seed}i.model.ckpt')
     )
 
@@ -123,8 +130,8 @@ def play(
     learn_fn = make_alg(
         envs=env
     )
-    
-    log.info(f'<learn>')
+
+    log.info('<learn>')
     learn_fn(
         agent=agent,
         logger=SummaryWriter(os.path.join(team_dir, f'tb-{str(seed)}')),
@@ -135,7 +142,7 @@ def play(
     )
 
     torch.save(
-        agent, 
+        agent,
         final_model
     )
 

@@ -1,0 +1,25 @@
+_target_: factories.alg.ppo.make_alg
+id: ppo
+
+rparams:
+  total_timesteps: 100000
+  batch_size: ${bmult:${meta.task.num_envs},${meta.alg.hparams.num_steps}}
+  minibatch_size: ${bdiv:${meta.alg.rparams.batch_size},${meta.alg.hparams.num_minibatches}}
+  num_updates: ${bdiv:${meta.alg.rparams.total_timesteps}, ${meta.alg.rparams.batch_size}}
+
+
+hparams:
+  learning_rate: 0.0025
+  num_steps: 32
+  anneal_lr: True
+  gamma: 0.99
+  gae_lambda: 0.95
+  num_minibatches: 4
+  update_epochs: 4
+  norm_adv: true
+  clip_coef: 0.2
+  clip_vloss: true
+  ent_coef: 0.01
+  vf_coef: 0.5
+  max_grad_norm: 0.5
+  target_kl:

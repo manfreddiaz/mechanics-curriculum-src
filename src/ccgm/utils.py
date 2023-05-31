@@ -11,7 +11,7 @@ def form_coalitions(
 ):
     num_players = len(players)
     max_order = max_order if max_order is not None else num_players
-    
+
     coalesce = permutations if ordered else combinations
     # teams = []
     idx = 0

@@ -12,20 +12,22 @@ from static.utils import hydra_custom_resolvers, play
 
 
 hydra_custom_resolvers()
+
+
 @hydra.main(version_base=None, config_path="conf", config_name="main")
 def main(
     cfg: DictConfig
 ) -> None:
-    
+
     log = logging.getLogger(__name__)
-    
+
     torch.backends.cudnn.deterministic = cfg.torch.deterministic
-    
+
     game_spec, _ = hydra.utils.instantiate(cfg.task)
 
     outdir = os.path.join(
         cfg.run.outdir,
-        f"{cfg.task.id}", 
+        f"{cfg.task.id}",
         f"{cfg.task.order}",
         f"{cfg.alg.id}"
     )
@@ -36,7 +38,7 @@ def main(
 
     tmp.set_start_method('spawn')
     with tmp.Pool(
-        processes=cfg.thread_pool.size, 
+        processes=cfg.thread_pool.size,
         maxtasksperchild=cfg.thread_pool.maxtasks
     ) as ppe:
         for seed, coalition in product(seeds, game_spec.coalitions):
@@ -47,7 +49,8 @@ def main(
             try:
                 code = game.get()
                 coalition = games[game]
-                log.info(f'<finished> game with {coalition.id}: finished with exit code {code}')
+                log.info(
+                    f'<finished> game with {coalition.id}: finished with exit code {code}')
             except Exception as ex:
                 log.error(
                     f'<FAIL> game {coalition.id} with the following exception: \n',

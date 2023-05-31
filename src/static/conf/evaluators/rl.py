@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 import gym
-
+from stable_baselines3.common.evaluation import evaluate_policy
 
 def eval_model(
     model, 
@@ -9,19 +9,29 @@ def eval_model(
     num_steps: int,
     device: torch.device
 ):
-    device = torch.device(device) 
-    rewards = np.zeros(shape=(env.num_envs, num_steps)) 
-    
-    obs = env.reset()
-    for step in range(num_steps):
-        action = model.predict(torch.tensor(obs, device=device))
+
+    # accumulators
+    rewards = np.zeros(env.num_envs, dtype=np.float32)
+    steps = np.zeros(env.num_envs)
+    run_episodes = np.zeros(env.num_envs)
+    episodes_rewards, episodes_lengths = [], []
+
+    next_obs = env.reset()
+    while (run_episodes < num_steps).any():
+        with torch.no_grad():
+            action = model.predict(torch.tensor(next_obs, dtype=torch.float32).to(device))
         next_obs, reward, done, info = env.step(action.cpu().numpy())
-        rewards[::, step] = reward
-        if all(done):
-            next_obs = env.reset()
-        obs = next_obs
-    
-    return rewards
+        rewards += reward
+        steps += 1
+        for i in range(env.num_envs):
+            if done[i]:
+                run_episodes[i] += 1
+                episodes_rewards.append(rewards[i])
+                episodes_lengths.append(steps[i])
+                rewards[i] = 0.0
+                steps[i] = 0
+
+    return episodes_rewards
 
 
 def make_evaluator(

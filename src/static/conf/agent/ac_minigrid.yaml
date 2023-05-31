@@ -1,0 +1,2 @@
+_target_: conf.agent.ac_minigrid.make_agent
+id: ac_minigrid

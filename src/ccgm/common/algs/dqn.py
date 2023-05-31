@@ -29,6 +29,8 @@ class QPolicyWithTarget:
     q_network: nn.Module
     target_network: nn.Module
 
+    def predict(self, x):
+        return self.q_network.predict(x)
 
 @dataclass
 class OffPolicyAgent:
@@ -157,7 +159,8 @@ class DQN:
         logger,
         device,
         log_every: int = -1, # means no intermediate save log
-        log_file_format: str = None
+        log_file_format: str = None,
+        eval_fn = None,
     ):
         start_time = time.time()
 
@@ -193,10 +196,12 @@ class DQN:
             logger.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
             
             if log_every != -1 and global_step % log_every == 0:
-                assert log_file_format is not None
-                torch.save(
-                    agent,
-                    log_file_format.format(global_step)
-                )
+                eval_value = eval_fn(agent.policy)
+                logger.add_scalar("eval/returns", np.mean(eval_value), global_step)
+                # assert log_file_format is not None
+                # torch.save(
+                #     agent,
+                #     log_file_format.format(global_step)
+                # )
 
 

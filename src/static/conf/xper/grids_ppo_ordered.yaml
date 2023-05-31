@@ -1,0 +1,18 @@
+# @package _global_
+defaults:
+  - override /alg: ppo
+  - override /agent: ac_minigrid
+  - override /task: grids
+
+alg:
+  rparams:
+    total_timesteps: 500000
+
+task:
+  order: ordered
+  episode_limit: 500000
+
+run:
+    seed: 0
+    num_seeds: 3
+    outdir: logs/static/

@@ -1,5 +1,4 @@
 
-import functools
 from torch.utils.data import DataLoader
 from ccgm.common.envs.sl.env import ClassCoalitionDataset
 from ccgm.common.envs.sl.mnist.config import ROOT_DIR
@@ -10,13 +9,13 @@ from ccgm.common.envs.sl.mnist import (
 
 
 def make_cooperative_task(
-    team: list[int],
+    team: list[int], train: bool,
     batch_size: int,
     num_workers: int
 ):
     coalition_dataset = ClassCoalitionDataset(
-        player_ids=team,
-        root_dir=ROOT_DIR
+        player_ids=team, root_dir=ROOT_DIR,
+        train=train
     )
     return DataLoader(
         coalition_dataset, batch_size=batch_size,
@@ -29,7 +28,8 @@ def make_task(
     order: str,
     version: str,
     batch_size: int,
-    num_workers: int
+    num_workers: int,
+    train: bool
 ):
     if version == 'spur':
         players = SPURIOUS
@@ -47,15 +47,14 @@ def make_task(
 
     def make_game(
         team: CoalitionMetadata, probs: list[int], 
-        team_dir: str, seed: int
+        team_dir: str, seed: int, train: bool = train
     ):
         if probs is not None:
             raise ValueError("probs")
 
         return make_cooperative_task(
-            team=list(map(int, team.players)),
-            batch_size=batch_size,
-            num_workers=num_workers
+            team=list(map(int, team.players)), train=train,
+            batch_size=batch_size, num_workers=num_workers
         )
 
     return game_spec, make_game

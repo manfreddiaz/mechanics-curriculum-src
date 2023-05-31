@@ -2,7 +2,7 @@ _target_: conf.task.sipd.make_task
 id: sipd
 order: random
 num_envs: 1
-num_episodes: 500
+num_steps: 100000
 episode_limit: 200
 sparse: true
 one_hot: true

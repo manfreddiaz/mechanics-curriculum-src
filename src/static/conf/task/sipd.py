@@ -72,7 +72,7 @@ def make_cooperative_env(
     ordered: bool = False,
     probs: List = None,
     episode_time_limit: int = 200,
-    num_episodes: int = 500,
+    num_steps: int = 100000,
     sparse: bool = True,
     one_hot: bool = True, 
 ) -> 'CooperativeMetaGame':
@@ -82,7 +82,7 @@ def make_cooperative_env(
             team=team,
             order=ordered,
             episode_time_limit=episode_time_limit,
-            total_time_limit=num_episodes,
+            total_time_limit=num_steps,
             probs=probs,
             sparse=sparse,
             one_hot=one_hot
@@ -95,7 +95,7 @@ def make_cooperative_env(
 def make_task(
     id: str,
     order: str,
-    num_episodes: int,
+    num_steps: int,
     num_envs: int,
     episode_limit: int,
     sparse: bool,
@@ -108,7 +108,7 @@ def make_task(
 
     def make_env(
         team: List[int], probs: list[int], 
-        team_dir: str, seed: int
+        team_dir: str, seed: int, train: bool = True
     ):
         def monitored():
             return Monitor(
@@ -117,11 +117,11 @@ def make_task(
                     ordered=order,
                     probs=probs,
                     episode_time_limit=episode_limit,
-                    num_episodes=num_episodes,
+                    num_steps=num_steps,
                     sparse=sparse,
                     one_hot=one_hot
                 ),
-                filename=os.path.join(team_dir, f'{seed}.train'),
+                filename=os.path.join(team_dir, f'{seed}.train' if train else f'{seed}.eval'),
                 info_keywords=('meta-strategy',)
             )
         envs = gym.vector.SyncVectorEnv([

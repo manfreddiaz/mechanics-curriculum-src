@@ -1,57 +1,31 @@
-import os
-import random
-import yaml
-import numpy as np
-import torch
-import torchvision
+from torchvision.datasets import CIFAR10
 import torchvision.transforms as transforms
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-from torchmetrics.classification import MulticlassConfusionMatrix
 
+from ccgm.common.envs.sl.build import build
 from ccgm.common.envs.sl.cifar10.config import ROOT_DIR
 from ccgm.common.envs.sl.cifar10.net import Net
-from ccgm.common.envs.sl.utils import compute_confusion_matrix, compute_treachorus_pairs, train_or_load_model
+
 
 
 def main(
     seed: int = 1234, batch_size: int = 4, 
-    epochs: int = 200
+    epochs: int = 200, cfm_on_val: bool = False,
+    max_players : int = 6
 ):
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
     
     classes = ('plane', 'car', 'bird', 'cat',
            'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
     transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     ])
-    trainset = torchvision.datasets.CIFAR10(
-        root=ROOT_DIR, train=True,
-        download=True, transform=transform
-    )
-    trainloader = torch.utils.data.DataLoader(
-        trainset, batch_size=batch_size,
-        shuffle=True, num_workers=2
-    )
-    
-    model = train_or_load_model(
-        agent=Net(), device=device,
-        epochs=epochs, trainloader=trainloader,
-        save_path=os.path.join(ROOT_DIR, 'cifar10.pth')
-    )
-    confusion_matrix = compute_confusion_matrix(
-        model, dataloader=trainloader,
-        save_path=os.path.join(ROOT_DIR, 'cifar10_cfm.npy')
-    )
-    compute_treachorus_pairs(
-        player_ids=classes, max_players=6, confusion_matrix=confusion_matrix,
-        save_path=os.path.join(ROOT_DIR, 'players.yaml')
+
+    build(
+        dataset_name="cifar10", dataset_fn=CIFAR10, classes=classes,
+        transform=transform, root_dir=ROOT_DIR, net=Net(),
+        seed=seed, batch_size=batch_size, epochs=epochs, cfm_on_val=cfm_on_val,
+        max_players=max_players
     )
     
 

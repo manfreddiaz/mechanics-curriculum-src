@@ -12,30 +12,45 @@ import hydra
 from omegaconf import DictConfig
 
 from ccgm.utils import CoalitionMetadata
+import static.proj as proj
 
 from static.utils import hydra_custom_resolvers
 from static.utils import play
 
 
-def proportional_shapley(values: np.array):
-    propt = values - values.max()
-    propt += 1e-5
-    propt = np.exp(propt)
-    propt /= np.sum(propt)
-
-    return propt
-
-
 def coalition_from_shapley_value(
-        players: list[str], indir: str, cfg: DictConfig):
+    players: list[str], 
+    indir: str, 
+    cfg: DictConfig,
+):
+    if cfg.propt.method in ["shapley", "nowak_radzik", "sanchez_bergantinos"]:
+        value = pd.read_csv(
+            os.path.join(indir, f"trainer_{cfg.propt.method}_final.csv"),
+            index_col=0
+        )
+        # NOTE: Shapley values are additive
+        if cfg.propt.reduce == "mean":
+            priors = value.mean(axis=1).to_numpy()
+        elif cfg.propt.reduce == "sum":
+            priors = value.sum(axis=1).to_numpy()
+        elif cfg.propt.reduce == "all":
+            priors = value[
+                CoalitionMetadata.to_id(players)].to_numpy()
+        elif cfg.propt.reduce == "player":
+            # assert "player" == cfg.propt
+            priors = value[
+                players[cfg.propt.index]].to_numpy()
 
-    value = pd.read_csv(
-        os.path.join(indir, f"trainer_{cfg.propt.method}_final.csv"),
-        index_col=0
-    )
-    # NOTE: Shapley values are additive
-    additive = value.mean(axis=1)
-    propt = proportional_shapley(additive).to_numpy()
+    elif cfg.propt.method == "uniform":
+        priors = np.ones(shape=(len(players)))
+    
+    if cfg.propt.proj == "softmax":
+        propt = proj.projection_softmax(priors)
+    elif cfg.propt.proj == "simplex":
+        propt = proj.projection_simplex_sort(priors)
+    else:
+        raise ValueError("propt.proj")
+    
     if cfg.task.order == "ordered":
         sorted_idx = propt.argsort()[::-1]
         coalition = CoalitionMetadata(
@@ -52,9 +67,9 @@ def coalition_from_shapley_value(
             probs=propt.tolist()
         )
     else:
-        raise ValueError(f"invalid value for <task.order>: {cfg.task.order}")
+        raise ValueError("task.order")
 
-    return coalition, additive.to_numpy().tolist()
+    return coalition, priors
 
 
 hydra_custom_resolvers()
@@ -84,29 +99,52 @@ def main(
     assert os.path.exists(
         indir), "invalid step, run [main, eval, shapley] first"
 
+    opponent = cfg.propt.index
+    player = "all" if opponent == -1 else f"{opponent}"
     outdir = os.path.join(
         base_dir,
         "propt",
         f"{cfg.task.order}",
         f"{cfg.alg.id}",
-        f"{cfg.propt.method}",
+        f"{cfg.propt.method}-{cfg.propt.reduce}-{player}-{cfg.propt.proj}",
     )
     os.makedirs(outdir, exist_ok=True)
 
     seeds = range(cfg.run.seed, cfg.run.seed + cfg.run.num_seeds)
     games = {}
 
-    coalition, additive = coalition_from_shapley_value(
-        np.array([player_id for player_id in game_spec.players]),
+    players = np.array([player_id for player_id in game_spec.players])
+    coalition, priors = coalition_from_shapley_value(
+        players,
         indir=indir,
         cfg=cfg
     )
+    
+    if opponent == -1:
+        eval_coalition = CoalitionMetadata(
+            players=players.tolist(),
+            idx=0,
+            ordered=False,
+            probs=proj.projection_softmax(
+                np.ones(shape=len(players)
+            )).tolist()
+        )
+    else:
+        print(players.tolist())
+        opponent_player = [players.tolist()[opponent]]
+        eval_coalition = CoalitionMetadata(
+            players=opponent_player,
+            idx=0,
+            ordered=False,
+            probs=[1.0]
+        )
 
     info = vars(coalition)
-    info['additive'] = additive
+    info['prior'] = priors.tolist()
     with open(os.path.join(outdir, 'game.json'), mode='w+') as f:
         json.dump(info, f, indent=2)
 
+    
     tmp.set_start_method('spawn')
     with tmp.Pool(
         processes=cfg.thread_pool.size,
@@ -115,7 +153,7 @@ def main(
         for seed in seeds:
             log.info(f"<submit> game with {coalition.id}, seed: {seed}")
             games[ppe.apply_async(
-                play, (coalition, seed, outdir, cfg))] = coalition
+                play, (coalition, eval_coalition, seed, outdir, cfg))] = coalition
 
         for game in games:
             try:

@@ -6,17 +6,17 @@ import torch.utils.data as data
 class ClassCoalitionDataset(data.Dataset):
     
     def __init__(
-        self,
-        player_ids: list[int],
-        root_dir: str
+        self, player_ids: list[int],
+        root_dir: str, train: bool = True
     ) -> None:
         super().__init__()
     
         self.data = []
         self.targets = []
 
+        base_dir = os.path.join(root_dir, "train" if train else "test")
         for player_id in player_ids:
-            self.player_file = os.path.join(root_dir, f"player_{player_id}.pkl")
+            self.player_file = os.path.join(base_dir, f"player_{player_id}.pkl")
             with open(self.player_file, mode='rb') as f:
                 try:
                     while True:

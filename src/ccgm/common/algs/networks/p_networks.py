@@ -46,3 +46,4 @@ class MinAtarPolicy(nn.Module):
         x = F.relu(self.conv(x))
         x = self.fc_hidden(x.view(x.size(0), -1))
         return x
+

@@ -6,9 +6,10 @@ defaults:
     # overridable with xper
 
 propt:
-    reduce: all    # [all, mean, sum]
+    reduce: all    # [all, mean, sum, player]
     method: shapley # [shapley, uniform]
     proj: softmax # [softmax, simplex]
+    index: -1  # use only with reduce:player
 
 run:
     seed: 0
@@ -17,7 +18,7 @@ run:
     log_every: 50   # updates in PPO
     
 thread_pool:
-    size: 5
+    size: 1
     maxtasks: 4
 
 torch:

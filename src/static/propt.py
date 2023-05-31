@@ -37,9 +37,9 @@ def coalition_from_shapley_value(
             priors = value[
                 CoalitionMetadata.to_id(players)].to_numpy()
         elif cfg.propt.reduce == "player":
-            assert "player" in cfg.propt
+            # assert "player" == cfg.propt
             priors = value[
-                cfg.propt.player].to_numpy()
+                players[cfg.propt.index]].to_numpy()
 
     elif cfg.propt.method == "uniform":
         priors = np.ones(shape=(len(players)))
@@ -99,13 +99,14 @@ def main(
     assert os.path.exists(
         indir), "invalid step, run [main, eval, shapley] first"
 
+    opponent = cfg.propt.index
+    player = "all" if opponent == -1 else f"{opponent}"
     outdir = os.path.join(
         base_dir,
         "propt",
         f"{cfg.task.order}",
         f"{cfg.alg.id}",
-        f"{cfg.propt.method}-{cfg.propt.reduce}-{cfg.propt.proj}",
-
+        f"{cfg.propt.method}-{cfg.propt.reduce}-{player}-{cfg.propt.proj}",
     )
     os.makedirs(outdir, exist_ok=True)
 
@@ -118,14 +119,25 @@ def main(
         indir=indir,
         cfg=cfg
     )
-    eval_coalition = CoalitionMetadata(
-        players=players.tolist(),
-        idx=0,
-        ordered=False,
-        probs=proj.projection_softmax(
-            np.ones(shape=len(players)
-        )).tolist()
-    )
+    
+    if opponent == -1:
+        eval_coalition = CoalitionMetadata(
+            players=players.tolist(),
+            idx=0,
+            ordered=False,
+            probs=proj.projection_softmax(
+                np.ones(shape=len(players)
+            )).tolist()
+        )
+    else:
+        print(players.tolist())
+        opponent_player = [players.tolist()[opponent]]
+        eval_coalition = CoalitionMetadata(
+            players=opponent_player,
+            idx=0,
+            ordered=False,
+            probs=[1.0]
+        )
 
     info = vars(coalition)
     info['prior'] = priors.tolist()

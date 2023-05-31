@@ -99,18 +99,26 @@ def main(
 
     log = logging.getLogger(__name__)
 
+    opponent = cfg.meta.task.evaluator_action
+
     outdir = os.path.join(
         cfg.run.outdir,
         # cfg.meta.task.id,
         cfg.main.task.id,
-        cfg.main.alg.id
+        cfg.main.alg.id,
+        "all" if opponent == -1 else f"player_{opponent}"
     )
     os.makedirs(outdir, exist_ok=True)
 
     seeds = range(cfg.run.seed, cfg.run.seed + cfg.run.num_seeds)
     games = {}
 
-    tmp.set_start_method('spawn')
+    try:
+        tmp.set_start_method('spawn', force=True)
+        print("spawned")
+    except RuntimeError:
+        pass
+
     with tmp.Pool(
         processes=cfg.thread_pool.size,
         maxtasksperchild=cfg.thread_pool.maxtasks
